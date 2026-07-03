@@ -1,42 +1,52 @@
 const express = require("express");
-const cors = require("cors");
+const cors    = require("cors");
 
-// Import route modules
-const membersRouter = require("./routes/members");
-const trainersRouter = require("./routes/trainers");
-const paymentsRouter = require("./routes/payments");
+// Route modules
+const membersRouter     = require("./routes/members");
+const trainersRouter    = require("./routes/trainers");
+const paymentsRouter    = require("./routes/payments");
 const enrollmentsRouter = require("./routes/enrollments");
-const plansRouter = require("./routes/plans");
+const plansRouter       = require("./routes/plans");
 
-// Importing db triggers the startup connection check.
-// If MySQL is unreachable, process.exit(1) is called from db.js.
+// Startup DB connection check (exits if MySQL unreachable)
 require("./db");
 
-const app = express();
+const app  = express();
 const PORT = process.env.PORT || 5001;
 
-// ── Middleware ────────────────────────────────────────────────
-app.use(cors()); // Allow all origins (frontend is a plain HTML file)
-app.use(express.json()); // Parse JSON request bodies
+// ── Middleware ────────────────────────────────────────────────────────────────
+app.use(cors());
+app.use(express.json());
 
-// ── Routes ───────────────────────────────────────────────────
-app.use("/members", membersRouter);
-app.use("/trainers", trainersRouter);
-app.use("/payments", paymentsRouter);
+// ── Routes ────────────────────────────────────────────────────────────────────
+app.use("/members",     membersRouter);
+app.use("/trainers",    trainersRouter);
+app.use("/payments",    paymentsRouter);
 app.use("/enrollments", enrollmentsRouter);
-app.use("/plans", plansRouter);
+app.use("/plans",       plansRouter);
 
-// ── Health check ─────────────────────────────────────────────
+// ── Health check ──────────────────────────────────────────────────────────────
 app.get("/", (req, res) => {
-  res.json({ message: "Gym Management System API is running 🏋️" });
+  res.json({
+    success: true,
+    message: "Gym Management System API is running 🏋️",
+    version: "2.0.0",
+    endpoints: ["/members", "/trainers", "/payments", "/enrollments", "/plans"],
+  });
 });
 
-// ── 404 handler ──────────────────────────────────────────────
+// ── 404 handler ───────────────────────────────────────────────────────────────
 app.use((req, res) => {
-  res.status(404).json({ message: "Route not found" });
+  res.status(404).json({ success: false, message: `Route not found: ${req.method} ${req.path}` });
 });
 
-// ── Start server ─────────────────────────────────────────────
+// ── Global error handler ──────────────────────────────────────────────────────
+app.use((err, req, res, _next) => {
+  console.error("Unhandled error:", err);
+  res.status(500).json({ success: false, message: err.message || "Internal server error." });
+});
+
+// ── Start ─────────────────────────────────────────────────────────────────────
 app.listen(PORT, () => {
   console.log(`🚀  Server running at http://localhost:${PORT}`);
 });
