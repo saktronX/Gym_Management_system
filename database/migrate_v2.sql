@@ -9,7 +9,7 @@ USE Gym_Management_System;
 
 -- ── 1. Add member_id to enrollment (the core missing FK) ──────────────────────
 ALTER TABLE enrollment
-  ADD COLUMN IF NOT EXISTS member_id INT NULL AFTER enrollment_id;
+   ADD COLUMN member_id INT NULL AFTER enrollment_id;
 
 -- Add FK constraint only if it doesn't already exist
 SET @fk_exists = (
@@ -26,7 +26,7 @@ PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- ── 2. Add payment_date to payment ────────────────────────────────────────────
 ALTER TABLE payment
-  ADD COLUMN IF NOT EXISTS payment_date DATE NULL AFTER plan_id;
+  ADD COLUMN payment_date DATE NULL AFTER plan_id;
 
 -- ── 3. Normalize membership_plan.Description → description ───────────────────
 -- Only rename if the column is still called 'Description' (PascalCase)

@@ -1759,16 +1759,16 @@
       clearFormErrors(paymentForm);
       const fd = new FormData(paymentForm);
 
-      const memberId  = fd.get("paymentMemberId")?.toString().trim();
-      const planId    = fd.get("paymentPlanId")?.toString().trim();
+      const memberId = fd.get("paymentMemberId")?.toString().trim();
+      const planId = fd.get("paymentPlanId")?.toString().trim();
       const amountVal = fd.get("paymentAmount")?.toString().trim();
-      const mode      = fd.get("paymentMode")?.toString().trim();
-      const payDate   = fd.get("paymentDate")?.toString().trim() || null;
-      const status    = fd.get("paymentStatus")?.toString().trim();
-      const amount    = parseFloat(amountVal || "0");
+      const mode = fd.get("paymentMode")?.toString().trim();
+      const payDate = fd.get("paymentDate")?.toString().trim() || null;
+      const status = fd.get("paymentStatus")?.toString().trim();
+      const amount = parseFloat(amountVal || "0");
 
       const memberIdSel = $("paymentMemberId");
-      const planIdSel   = $("paymentPlanId");
+      const planIdSel = $("paymentPlanId");
       const amountInput = $("paymentAmount");
       const modeSel = $("paymentMode");
       const statusSel = $("paymentStatus");
@@ -1879,11 +1879,11 @@
       const fd = new FormData(enrollmentForm);
 
       // After migration: enrollment(enrollment_id, member_id, plan_id, start_date, end_date, status)
-      const memberId  = fd.get("enrollMemberId")?.toString().trim();
-      const planId    = fd.get("enrollPlanId")?.toString().trim();
+      const memberId = fd.get("enrollMemberId")?.toString().trim();
+      const planId = fd.get("enrollPlanId")?.toString().trim();
       const startDate = fd.get("enrollStartDate")?.toString().trim();
-      const endDate   = fd.get("enrollEndDate")?.toString().trim();
-      const status    = fd.get("enrollStatus")?.toString().trim();
+      const endDate = fd.get("enrollEndDate")?.toString().trim();
+      const status = fd.get("enrollStatus")?.toString().trim();
 
       let valid = true;
       if (!validateRequiredField($("enrollMemberId"), "Member")) valid = false;
@@ -1953,15 +1953,12 @@
           if (!confirm("Delete this enrollment?")) return;
           const en = enrollments[i];
           const eid = en.enrollment_id || en.id;
-          if (eid) {
-            try {
-              const res = await fetch(`${ENROLLMENT_API}/${eid}`, { method: "DELETE" });
-              if (!res.ok) { showToast("Failed to delete enrollment from database.", "error"); return; }
-            } catch { showToast("Backend unavailable — could not delete.", "error"); return; }
-          }
-          enrollments.splice(i, 1);
-          saveArr(ENROLLMENTS_KEY, enrollments);
-          renderEnrollments();
+          if (!eid) { showToast("Cannot delete — no ID.", "error"); return; }
+          try {
+            const res = await fetch(`${ENROLLMENT_API}/${eid}`, { method: "DELETE" });
+            if (!res.ok) { showToast("Failed to delete enrollment.", "error"); return; }
+          } catch { showToast("Backend unavailable — could not delete.", "error"); return; }
+          await fetchEnrollments();
           showToast("Enrollment deleted.");
         });
       });
@@ -1969,25 +1966,15 @@
 
     // ─── INIT ──────────────────────────────────────────────────────────────────
     function init() {
-      // Seed UI from localStorage immediately (offline/cached state)
-      trainers = loadArr(TRAINERS_KEY);
-      payments = loadArr(PAYMENTS_KEY).map(p => ({ ...p, amount: parseFloat(p.amount || p.Amount) || 0 }));
-      enrollments = loadArr(ENROLLMENTS_KEY);
-      plans = loadArr(PLANS_KEY);
-
-      updateDashboardStats();
-      renderTrainers();
-      renderPayments();
-      renderEnrollments();
-
-      // Render plans from cache or fallback immediately
-      if (plans.length === 0) plans = [...FALLBACK_PLANS];
+      // Show fallback plans immediately so dropdowns aren't empty
+      plans = [...FALLBACK_PLANS];
       renderPlans();
       populatePlanDropdowns();
+      updateDashboardStats();
 
       if (isAuthenticated()) {
         showApp();
-        // Auto-fetch live data from backend only when logged in
+        // All data comes from the database — no localStorage pre-seeding
         fetchMembers();
         fetchTrainers();
         fetchPayments();
