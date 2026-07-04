@@ -230,6 +230,9 @@
         currency: "INR",
         minimumFractionDigits: 2,
       });
+      // Phase 2 — refresh charts whenever stats update
+      initCharts();
+      updateRecentPayments();
     }
 
     // ─── MEMBERSHIP PLANS ──────────────────────────────────────────────────────
@@ -836,4 +839,164 @@
     }
 
     init();
+
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // PHASE 2 — CHART.JS INTEGRATION
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    let revenueChartInstance = null;
+    let enrollmentChartInstance = null;
+
+    function initCharts() {
+      if (typeof Chart === 'undefined') return;
+
+      // ── Revenue Line Chart ────────────────────────────────────────────────
+      const revenueCtx = document.getElementById('revenueChart');
+      if (revenueCtx) {
+        // Group payments by month (e.g. "Jun '25")
+        const monthMap = {};
+        payments.forEach(p => {
+          const raw = p.payment_date || p.created_at || null;
+          const key = raw
+            ? new Date(raw).toLocaleDateString('en-IN', { month: 'short', year: '2-digit' })
+            : 'Unknown';
+          monthMap[key] = (monthMap[key] || 0) + (parseFloat(p.amount) || 0);
+        });
+
+        const labels = Object.keys(monthMap);
+        const data   = Object.values(monthMap);
+
+        if (revenueChartInstance) revenueChartInstance.destroy();
+        revenueChartInstance = new Chart(revenueCtx, {
+          type: 'line',
+          data: {
+            labels: labels.length ? labels : ['No Data'],
+            datasets: [{
+              label: 'Revenue (₹)',
+              data:   data.length ? data : [0],
+              borderColor:     '#2563EB',
+              backgroundColor: 'rgba(37,99,235,0.08)',
+              borderWidth: 2.5,
+              fill: true,
+              tension: 0.42,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              pointBackgroundColor: '#2563EB',
+              pointBorderColor: '#fff',
+              pointBorderWidth: 2,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: ctx => ' ₹' + ctx.parsed.y.toLocaleString('en-IN'),
+                }
+              }
+            },
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: { font: { size: 11 }, color: '#9CA3AF' },
+                border: { display: false },
+              },
+              y: {
+                grid: { color: '#F3F4F6', drawBorder: false },
+                ticks: {
+                  font: { size: 11 }, color: '#9CA3AF',
+                  callback: v => '₹' + Number(v).toLocaleString('en-IN'),
+                },
+                border: { display: false },
+              }
+            }
+          }
+        });
+      }
+
+      // ── Enrollment Doughnut ───────────────────────────────────────────────
+      const enrollCtx = document.getElementById('enrollmentChart');
+      if (enrollCtx) {
+        const counts = { Active: 0, Inactive: 0, Expired: 0 };
+        enrollments.forEach(e => {
+          const s = e.status || e.Status || '';
+          if (Object.prototype.hasOwnProperty.call(counts, s)) counts[s]++;
+          else counts['Inactive']++;
+        });
+
+        const total = counts.Active + counts.Inactive + counts.Expired;
+
+        if (enrollmentChartInstance) enrollmentChartInstance.destroy();
+        enrollmentChartInstance = new Chart(enrollCtx, {
+          type: 'doughnut',
+          data: {
+            labels: ['Active', 'Inactive', 'Expired'],
+            datasets: [{
+              data: total > 0
+                ? [counts.Active, counts.Inactive, counts.Expired]
+                : [1, 0, 0],
+              backgroundColor: total > 0
+                ? ['#22C55E', '#EF4444', '#F97316']
+                : ['#E5E7EB', '#E5E7EB', '#E5E7EB'],
+              borderWidth: 0,
+              hoverOffset: 8,
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '72%',
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { font: { size: 11 }, boxWidth: 10, padding: 16, color: '#6B7280' }
+              },
+              tooltip: {
+                callbacks: {
+                  label: ctx => {
+                    if (total === 0) return ' No data';
+                    return ` ${ctx.label}: ${ctx.parsed} (${Math.round(ctx.parsed / total * 100)}%)`;
+                  }
+                }
+              }
+            }
+          }
+        });
+      }
+    }
+
+    // ── Recent Payments panel (dashboard) ─────────────────────────────────
+    function updateRecentPayments() {
+      const panel = document.getElementById('recentPaymentsList');
+      if (!panel) return;
+
+      const recent = payments.slice().reverse().slice(0, 6);
+
+      if (recent.length === 0) {
+        panel.innerHTML = '<div class="empty" style="padding:32px 16px">No payments yet — go to Payments to record one.</div>';
+        return;
+      }
+
+      const colors = ['#2563EB','#22C55E','#F97316','#8B5CF6','#EF4444','#0EA5E9'];
+      panel.innerHTML = recent.map((p, i) => {
+        const name  = escapeHtml(p.memberName || `Member #${p.member_id}`);
+        const initials = name.replace(/[^A-Za-z]/g,'').slice(0,2).toUpperCase() || 'M';
+        const amount  = parseFloat(p.amount || 0).toLocaleString('en-IN', { style:'currency', currency:'INR', minimumFractionDigits:2 });
+        const ps = p.status || p.Status || '';
+        const badgeClass = ps === 'Completed' ? 'badge-completed' : ps === 'Pending' ? 'badge-pending' : 'badge-inactive';
+        const color = colors[i % colors.length];
+        return `
+          <div class="recent-item">
+            <div class="avatar" style="background:${color}">${initials}</div>
+            <div class="recent-info">
+              <div class="recent-name">${name}</div>
+              <div class="recent-sub">${escapeHtml(p.payment_mode || '—')} &nbsp;·&nbsp; <span class="badge ${badgeClass}">${escapeHtml(ps || '—')}</span></div>
+            </div>
+            <div class="recent-amount">${amount}</div>
+          </div>`;
+      }).join('');
+    }
   

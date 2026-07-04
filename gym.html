@@ -4,1989 +4,686 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Gym Management System</title>
-  <style>
-    :root {
-      --bg: #edf2ff;
-      --card: #ffffff;
-      --primary: #4f46e5;
-      --primary-dark: #3730a3;
-      --text: #0f172a;
-      --muted: #64748b;
-      --border: #e2e8f0;
-      --danger-bg: #fee2e2;
-      --danger-text: #b91c1c;
-      --success-bg: #dcfce7;
-      --success-text: #166534;
-      --shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
-    }
-
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
-      background: radial-gradient(circle at top left, #e0e7ff, var(--bg) 45%);
-      color: var(--text);
-      line-height: 1.45;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 24px 24px 30px;
-      border-radius: 20px;
-      box-shadow: 0 18px 42px rgba(15, 23, 42, 0.1);
-    }
-
-    .topbar {
-      margin-bottom: 18px;
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 12px;
-    }
-
-    .topbar h1 {
-      margin: 0;
-      font-size: 2rem;
-      letter-spacing: -0.02em;
-    }
-
-    .topbar p {
-      margin: 8px 0 0;
-      color: var(--muted);
-      font-size: 0.98rem;
-    }
-
-    .topbar-actions {
-      display: flex;
-      align-items: center;
-    }
-
-    .tabs {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin: 18px 0 20px;
-    }
-
-    .tab-btn {
-      border: 1px solid #cbd5e1;
-      background: #ffffff;
-      color: #334155;
-      border-radius: 10px;
-      padding: 9px 14px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-
-    .tab-btn:hover {
-      border-color: #a5b4fc;
-      color: #312e81;
-    }
-
-    .tab-btn.active {
-      background: #4f46e5;
-      border-color: #4f46e5;
-      color: #ffffff;
-      box-shadow: 0 8px 18px rgba(79, 70, 229, 0.28);
-    }
-
-    .tab-content-enter {
-      animation: tab-fade-in 0.36s ease;
-    }
-
-    @keyframes tab-fade-in {
-      from {
-        opacity: 0;
-        transform: translateY(10px) scale(0.995);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
-    }
-
-    .toast-container {
-      position: fixed;
-      top: 16px;
-      right: 16px;
-      z-index: 9999;
-      display: grid;
-      gap: 10px;
-      width: min(320px, calc(100vw - 24px));
-    }
-
-    .toast {
-      border-radius: 10px;
-      padding: 11px 12px;
-      color: #fff;
-      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.24);
-      font-size: 0.92rem;
-      animation: toast-in 0.2s ease;
-    }
-
-    .toast.success {
-      background: #16a34a;
-    }
-
-    .toast.error {
-      background: #dc2626;
-    }
-
-    @keyframes toast-in {
-      from {
-        opacity: 0;
-        transform: translateY(-5px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .login-screen {
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      background: radial-gradient(circle at top, #e0e7ff, #eef2ff 55%, #e2e8f0);
-    }
-
-    .login-card {
-      width: min(420px, 100%);
-      background: #ffffff;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.14);
-      padding: 24px;
-    }
-
-    .login-card h2 {
-      margin: 0;
-      font-size: 1.5rem;
-    }
-
-    .login-card .subtitle {
-      margin-top: 6px;
-      margin-bottom: 16px;
-    }
-
-    .panel {
-      background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      box-shadow: var(--shadow);
-      padding: 24px;
-      margin-bottom: 20px;
-      transition: transform 0.26s ease, box-shadow 0.26s ease, border-color 0.26s ease;
-    }
-
-    .panel:hover {
-      transform: translateY(-3px);
-      border-color: #c7d2fe;
-      box-shadow: 0 22px 40px rgba(15, 23, 42, 0.14);
-    }
-
-    .dashboard {
-      display: grid;
-      gap: 16px;
-      grid-template-columns: repeat(3, minmax(220px, 1fr));
-      margin-bottom: 20px;
-    }
-
-    .stat-card {
-      border-radius: 16px;
-      padding: 20px;
-      color: #fff;
-      box-shadow: 0 12px 26px rgba(15, 23, 42, 0.18);
-      transition: transform 0.25s ease, box-shadow 0.25s ease;
-    }
-
-    .stat-card:hover {
-      transform: translateY(-4px) scale(1.01);
-      box-shadow: 0 20px 34px rgba(15, 23, 42, 0.26);
-    }
-
-    .stat-head {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .stat-icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 28px;
-      height: 28px;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.2);
-      font-size: 0.95rem;
-    }
-
-    .stat-card h3 {
-      margin: 0;
-      font-size: 0.95rem;
-      font-weight: 600;
-      opacity: 0.92;
-    }
-
-    .stat-value {
-      margin: 10px 0 0;
-      font-size: 1.9rem;
-      font-weight: 700;
-    }
-
-    .members-stat {
-      background: linear-gradient(145deg, #3b82f6, #2563eb);
-    }
-
-    .trainers-stat {
-      background: linear-gradient(145deg, #10b981, #059669);
-    }
-
-    .revenue-stat {
-      background: linear-gradient(145deg, #f97316, #ea580c);
-    }
-
-    .section-header {
-      margin-bottom: 16px;
-    }
-
-    .section-header h2 {
-      margin: 0;
-      font-size: 1.35rem;
-      letter-spacing: -0.01em;
-    }
-
-    .subtitle {
-      margin: 0;
-      color: var(--muted);
-      font-size: 0.95rem;
-    }
-
-    .section-header .subtitle {
-      margin-top: 6px;
-    }
-
-    .grid {
-      display: grid;
-      gap: 16px;
-      grid-template-columns: repeat(2, minmax(220px, 1fr));
-      margin-top: 10px;
-    }
-
-    .grid-3 {
-      display: grid;
-      gap: 16px;
-      grid-template-columns: repeat(3, minmax(180px, 1fr));
-      margin-top: 10px;
-    }
-
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 7px;
-    }
-
-    .field.has-error input,
-    .field.has-error select {
-      border-color: #ef4444;
-      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
-    }
-
-    .error-text {
-      margin: 0;
-      font-size: 0.8rem;
-      color: #dc2626;
-    }
-
-    label {
-      font-size: 0.9rem;
-      color: #374151;
-      font-weight: 600;
-    }
-
-    input,
-    select {
-      border: 1px solid #cbd5e1;
-      border-radius: 10px;
-      padding: 11px 12px;
-      font-size: 0.95rem;
-      outline: none;
-      background: #fff;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-    }
-
-    input:focus,
-    select:focus {
-      border-color: #818cf8;
-      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
-      background: #fcfcff;
-    }
-
-    .actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 18px;
-      flex-wrap: wrap;
-    }
-
-    button {
-      border: 0;
-      border-radius: 12px;
-      padding: 10px 16px;
-      font-size: 0.95rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: transform 0.18s ease, background 0.22s ease, box-shadow 0.22s ease;
-    }
-
-    button:active {
-      transform: translateY(1px);
-    }
-
-    .btn-primary {
-      background: var(--primary);
-      color: #fff;
-      box-shadow: 0 8px 18px rgba(79, 70, 229, 0.28);
-    }
-
-    .btn-primary:hover {
-      background: var(--primary-dark);
-      transform: translateY(-2px);
-      box-shadow: 0 12px 22px rgba(79, 70, 229, 0.34);
-    }
-
-    .btn-secondary {
-      background: #e2e8f0;
-      color: #0f172a;
-    }
-
-    .btn-secondary:hover {
-      background: #bfdbfe;
-      color: #1e3a8a;
-      transform: translateY(-1px);
-    }
-
-    button:disabled {
-      opacity: 0.72;
-      cursor: not-allowed;
-    }
-
-    .notice {
-      margin-top: 14px;
-      padding: 11px 12px;
-      border-radius: 10px;
-      font-size: 0.92rem;
-      display: none;
-    }
-
-    .notice.error {
-      background: var(--danger-bg);
-      color: var(--danger-text);
-    }
-
-    .notice.success {
-      background: var(--success-bg);
-      color: var(--success-text);
-    }
-
-    .members-grid {
-      display: grid;
-      gap: 16px;
-      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-      margin-top: 16px;
-    }
-
-    .member-card {
-      background: #f8fafc;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 15px;
-      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
-      transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease;
-    }
-
-    .member-card:hover {
-      transform: translateY(-4px);
-      border-color: #c7d2fe;
-      box-shadow: 0 14px 24px rgba(15, 23, 42, 0.14);
-    }
-
-    .member-card h3 {
-      margin: 0 0 8px;
-      font-size: 1rem;
-    }
-
-    .member-card p {
-      margin: 4px 0;
-      font-size: 0.92rem;
-      color: #334155;
-    }
-
-    .card-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 10px;
-    }
-
-    .btn-soft {
-      border: 1px solid #cbd5e1;
-      background: #f8fafc;
-      color: #1e293b;
-      border-radius: 8px;
-      padding: 6px 10px;
-      font-size: 0.82rem;
-      box-shadow: none;
-    }
-
-    .btn-soft:hover {
-      background: #eef2ff;
-    }
-
-    .btn-danger-soft {
-      border: 1px solid #fecaca;
-      background: #fff1f2;
-      color: #b91c1c;
-      border-radius: 8px;
-      padding: 6px 10px;
-      font-size: 0.82rem;
-      box-shadow: none;
-    }
-
-    .btn-danger-soft:hover {
-      background: #ffe4e6;
-    }
-
-    .search-wrap {
-      margin-top: 14px;
-    }
-
-    .member-search {
-      width: 100%;
-      border: 1px solid #d1d5db;
-      border-radius: 10px;
-      padding: 10px 12px;
-      font-size: 0.95rem;
-    }
-
-    .member-search:focus {
-      border-color: #818cf8;
-      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
-    }
-
-    .highlight {
-      background: #fef08a;
-      border-radius: 4px;
-      padding: 0 2px;
-    }
-
-    .trainer-grid {
-      display: grid;
-      gap: 16px;
-      grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
-      margin-top: 16px;
-    }
-
-    .trainer-card {
-      background: #f8fafc;
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 15px;
-      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
-      transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease;
-    }
-
-    .trainer-card:hover {
-      transform: translateY(-4px);
-      border-color: #bbf7d0;
-      box-shadow: 0 14px 24px rgba(15, 23, 42, 0.14);
-    }
-
-    .trainer-card h3 {
-      margin: 0 0 8px;
-      font-size: 1rem;
-    }
-
-    .trainer-card p {
-      margin: 4px 0;
-      font-size: 0.92rem;
-      color: #334155;
-    }
-
-    /* Enrollment cards */
-    .enrollment-grid {
-      display: grid;
-      gap: 16px;
-      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-      margin-top: 16px;
-    }
-
-    .enrollment-card {
-      background: #f0fdf4;
-      border: 1px solid #bbf7d0;
-      border-radius: 12px;
-      padding: 15px;
-      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
-      transition: transform 0.24s ease, box-shadow 0.24s ease;
-    }
-
-    .enrollment-card:hover {
-      transform: translateY(-3px);
-      box-shadow: 0 12px 22px rgba(15, 23, 42, 0.12);
-    }
-
-    .enrollment-card h3 {
-      margin: 0 0 8px;
-      font-size: 1rem;
-    }
-
-    .enrollment-card p {
-      margin: 4px 0;
-      font-size: 0.92rem;
-      color: #166534;
-    }
-
-    .payment-history {
-      margin-top: 14px;
-      display: grid;
-      gap: 10px;
-    }
-
-    .payment-item {
-      list-style: none;
-      background: #fff7ed;
-      border: 1px solid #fed7aa;
-      border-radius: 10px;
-      padding: 12px;
-      box-shadow: 0 4px 14px rgba(15, 23, 42, 0.06);
-      transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
-    }
-
-    .payment-item:hover {
-      transform: translateY(-3px);
-      border-color: #fdba74;
-      box-shadow: 0 12px 22px rgba(15, 23, 42, 0.13);
-    }
-
-    .payment-item strong {
-      color: #7c2d12;
-    }
-
-    .item-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .icon-delete {
-      border: 1px solid #fecaca;
-      background: #fff1f2;
-      color: #b91c1c;
-      border-radius: 8px;
-      padding: 5px 9px;
-      font-size: 0.8rem;
-      box-shadow: none;
-    }
-
-    .icon-delete:hover {
-      background: #ffe4e6;
-    }
-
-    .loader-row {
-      display: none;
-      align-items: center;
-      gap: 8px;
-      margin-top: 12px;
-      color: #475569;
-      font-size: 0.9rem;
-    }
-
-    .spinner {
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      border: 2px solid #c7d2fe;
-      border-top-color: #4f46e5;
-      animation: spin 0.7s linear infinite;
-    }
-
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
-    }
-
-    .plans-grid {
-      margin-top: 16px;
-      display: grid;
-      gap: 14px;
-      grid-template-columns: repeat(3, minmax(200px, 1fr));
-    }
-
-    .plan-card {
-      background: #ffffff;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 18px;
-      box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
-      transition: transform 0.24s ease, box-shadow 0.24s ease, border-color 0.24s ease;
-    }
-
-    .plan-card:hover {
-      transform: translateY(-5px);
-      border-color: #c7d2fe;
-      box-shadow: 0 18px 32px rgba(15, 23, 42, 0.16);
-    }
-
-    .plan-card h3 {
-      margin: 0 0 6px;
-      font-size: 1.2rem;
-    }
-
-    .plan-price {
-      margin: 0;
-      font-size: 1.5rem;
-      font-weight: 700;
-    }
-
-    .plan-duration {
-      margin: 6px 0 12px;
-      color: var(--muted);
-      font-size: 0.92rem;
-    }
-
-    .plan-features {
-      margin: 0;
-      padding-left: 18px;
-      color: #334155;
-      font-size: 0.92rem;
-    }
-
-    .plan-features li {
-      margin-bottom: 6px;
-    }
-
-    .basic-plan {
-      border-top: 4px solid #60a5fa;
-    }
-
-    .premium-plan {
-      border-top: 4px solid #34d399;
-    }
-
-    .pro-plan {
-      border-top: 4px solid #f97316;
-    }
-
-    /* Badge for status */
-    .badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 20px;
-      font-size: 0.78rem;
-      font-weight: 600;
-    }
-
-    .badge-active {
-      background: #dcfce7;
-      color: #166534;
-    }
-
-    .badge-inactive {
-      background: #fee2e2;
-      color: #b91c1c;
-    }
-
-    .badge-pending {
-      background: #fef9c3;
-      color: #854d0e;
-    }
-
-    .badge-completed {
-      background: #dcfce7;
-      color: #166534;
-    }
-
-    .empty {
-      color: var(--muted);
-      margin-top: 8px;
-    }
-
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(15, 23, 42, 0.5);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      z-index: 10000;
-    }
-
-    .modal-overlay.show {
-      display: flex;
-    }
-
-    .modal {
-      width: min(500px, 100%);
-      background: #fff;
-      border-radius: 14px;
-      border: 1px solid var(--border);
-      box-shadow: 0 20px 38px rgba(15, 23, 42, 0.28);
-      padding: 18px;
-      max-height: 90vh;
-      overflow-y: auto;
-    }
-
-    .modal h3 {
-      margin: 0;
-    }
-
-    .modal .subtitle {
-      margin-top: 6px;
-    }
-
-    .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      margin-top: 14px;
-    }
-
-    @media (max-width: 1024px) {
-      .dashboard {
-        grid-template-columns: repeat(2, minmax(200px, 1fr));
-      }
-
-      .plans-grid {
-        grid-template-columns: repeat(2, minmax(200px, 1fr));
-      }
-
-      .grid-3 {
-        grid-template-columns: repeat(2, minmax(180px, 1fr));
-      }
-    }
-
-    @media (max-width: 700px) {
-      .container {
-        padding: 20px;
-      }
-
-      .topbar h1 {
-        font-size: 1.65rem;
-      }
-
-      .topbar {
-        flex-direction: column;
-        align-items: stretch;
-      }
-
-      .topbar-actions {
-        justify-content: flex-end;
-      }
-
-      .panel {
-        padding: 18px;
-      }
-
-      .tabs {
-        margin: 14px 0 16px;
-      }
-
-      .dashboard {
-        grid-template-columns: 1fr;
-      }
-
-      .grid {
-        grid-template-columns: 1fr;
-      }
-
-      .grid-3 {
-        grid-template-columns: 1fr;
-      }
-
-      .plans-grid {
-        grid-template-columns: 1fr;
-      }
-    }
-  </style>
+  <title>GymOS — Management System</title>
+  <meta name="description" content="Premium gym management dashboard — manage members, trainers, payments and plans in one place." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="gym.css" />
 </head>
 
 <body>
-  <div id="toastContainer" class="toast-container"></div>
 
-  <!-- LOGIN -->
-  <section id="loginScreen" class="login-screen">
+  <!-- ─── Toast Container ─────────────────────────────────────────────────── -->
+  <div id="toastContainer"></div>
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       LOGIN SCREEN
+  ════════════════════════════════════════════════════════════════════════ -->
+  <div id="loginScreen">
     <div class="login-card">
-      <h2>Admin Login</h2>
-      <p class="subtitle">Sign in to access the Gym Management Dashboard.</p>
-      <form id="loginForm">
-        <div class="field">
+
+      <div class="login-logo">
+        <div class="login-logo-icon">G</div>
+        <div>
+          <div class="login-title">GymOS</div>
+          <div class="login-sub">Management System</div>
+        </div>
+      </div>
+
+      <form id="loginForm" autocomplete="on" novalidate>
+        <div class="field" style="margin-bottom:16px">
           <label for="loginUsername">Username</label>
-          <input type="text" id="loginUsername" autocomplete="username" required />
+          <input
+            type="text"
+            id="loginUsername"
+            name="username"
+            autocomplete="username"
+            placeholder="admin"
+            required
+          />
         </div>
-        <div class="field" style="margin-top:12px">
+        <div class="field" style="margin-bottom:20px">
           <label for="loginPassword">Password</label>
-          <input type="password" id="loginPassword" autocomplete="current-password" required />
+          <input
+            type="password"
+            id="loginPassword"
+            name="password"
+            autocomplete="current-password"
+            placeholder="••••••••"
+            required
+          />
         </div>
-        <div class="actions">
-          <button type="submit" class="btn-primary" style="width:100%">Login</button>
-        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
+          Sign In
+        </button>
       </form>
+
       <div id="loginNotice" class="notice" role="alert"></div>
+
     </div>
-  </section>
+  </div>
+  <!-- /#loginScreen -->
 
-  <!-- APP -->
-  <div id="appContainer" class="container" style="display:none">
-    <header class="topbar">
-      <div>
-        <h1>Gym Management Dashboard</h1>
-        <p>Manage members, trainers, payments, and plans in one place.</p>
-      </div>
-      <div class="topbar-actions">
-        <button type="button" id="logoutBtn" class="btn-secondary">Logout</button>
-      </div>
-    </header>
 
-    <nav class="tabs">
-      <button type="button" class="tab-btn active" data-tab-target="dashboard">Dashboard</button>
-      <button type="button" class="tab-btn" data-tab-target="members">Members</button>
-      <button type="button" class="tab-btn" data-tab-target="trainers">Trainers</button>
-      <button type="button" class="tab-btn" data-tab-target="payments">Payments</button>
-      <button type="button" class="tab-btn" data-tab-target="enrollment">Enrollment</button>
-    </nav>
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       APP CONTAINER  (hidden until login)
+  ════════════════════════════════════════════════════════════════════════ -->
+  <div id="appContainer" style="display:none">
 
-    <!-- DASHBOARD STATS -->
-    <section class="dashboard" data-tab-content="dashboard">
-      <article class="stat-card members-stat">
-        <div class="stat-head"><span class="stat-icon">👥</span>
-          <h3>Total Members</h3>
-        </div>
-        <p id="totalMembersCount" class="stat-value">0</p>
-      </article>
-      <article class="stat-card trainers-stat">
-        <div class="stat-head"><span class="stat-icon">🏋️</span>
-          <h3>Total Trainers</h3>
-        </div>
-        <p id="totalTrainersCount" class="stat-value">0</p>
-      </article>
-      <article class="stat-card revenue-stat">
-        <div class="stat-head"><span class="stat-icon">💰</span>
-          <h3>Total Revenue</h3>
-        </div>
-        <p id="totalRevenueValue" class="stat-value">₹0.00</p>
-      </article>
-    </section>
+    <!-- ────────────────────────────────────────────────────────────────────
+         SIDEBAR
+    ─────────────────────────────────────────────────────────────────────── -->
+    <aside class="sidebar" id="sidebar">
 
-    <!-- MEMBERSHIP PLANS (dashboard) -->
-    <section class="panel" data-tab-content="dashboard">
-      <div class="section-header">
-        <h2>Membership Plans</h2>
-        <p class="subtitle">Available plans for member enrollment.</p>
-      </div>
-      <div id="plansGrid" class="plans-grid">
-        <!-- Populated by JS from DB or fallback -->
-      </div>
-    </section>
-
-    <!-- MEMBER REGISTRATION -->
-    <section class="panel" data-tab-content="members">
-      <div class="section-header">
-        <h2>Member Registration</h2>
-        <p class="subtitle">Add new members to your gym records.</p>
-      </div>
-      <form id="memberForm">
-        <div class="grid">
-          <div class="field">
-            <label for="name">Name</label>
-            <input type="text" id="name" name="name" required />
-          </div>
-          <div class="field">
-            <label for="gender">Gender</label>
-            <select id="gender" name="gender" required>
-              <option value="">Select Gender</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="phone">Phone</label>
-            <input type="tel" id="phone" name="phone" required />
-          </div>
-          <div class="field">
-            <label for="email">Email</label>
-            <input type="email" id="email" name="email" />
-          </div>
-          <div class="field">
-            <label for="dob">DOB</label>
-            <input type="date" id="dob" name="dob" required />
-          </div>
-          <div class="field">
-            <label for="address">Address</label>
-            <input type="text" id="address" name="address" required />
+      <!-- Brand -->
+      <div class="sidebar-brand">
+        <div class="brand-logo">
+          <div class="brand-icon">G</div>
+          <div>
+            <div class="brand-name">GymOS</div>
+            <div class="brand-tagline">Management System</div>
           </div>
         </div>
-        <div class="actions">
-          <button type="submit" class="btn-primary">Add Member</button>
-          <button type="button" id="fetchMembersBtn" class="btn-secondary">Fetch Members</button>
-        </div>
-      </form>
-      <div id="formNotice" class="notice" role="alert"></div>
-    </section>
+      </div>
 
-    <!-- MEMBERS DIRECTORY -->
-    <section class="panel" data-tab-content="members">
-      <div class="section-header">
-        <h2>Members Directory</h2>
-        <p class="subtitle">Fetch, search, and review all active members.</p>
-      </div>
-      <div class="search-wrap">
-        <input type="text" id="memberSearch" class="member-search" placeholder="Search member by name..." />
-      </div>
-      <div id="membersLoader" class="loader-row">
-        <span class="spinner"></span><span>Fetching members...</span>
-      </div>
-      <div id="membersNotice" class="notice" role="alert"></div>
-      <div id="membersList" class="members-grid"></div>
-      <p id="emptyState" class="empty">No members loaded yet.</p>
-    </section>
+      <!-- Navigation -->
+      <nav class="sidebar-nav" aria-label="Main navigation">
 
-    <!-- TRAINER MANAGEMENT -->
-    <section class="panel" data-tab-content="trainers">
-      <div class="section-header">
-        <h2>Trainer Management</h2>
-        <p class="subtitle">Add and manage trainers. All fields match the Trainer table schema.</p>
-      </div>
-      <form id="trainerForm">
-        <div class="grid">
-          <div class="field">
-            <label for="trainerName">Name</label>
-            <input type="text" id="trainerName" name="trainerName" required />
-          </div>
-          <div class="field">
-            <label for="specialization">Specialization</label>
-            <input type="text" id="specialization" name="specialization" />
-          </div>
-          <div class="field">
-            <label for="trainerPhone">Phone</label>
-            <input type="tel" id="trainerPhone" name="trainerPhone" required />
-          </div>
-          <!-- FIX: Added Email (NOT NULL UNIQUE in DB) -->
-          <div class="field">
-            <label for="trainerEmail">Email</label>
-            <input type="email" id="trainerEmail" name="trainerEmail" required />
-          </div>
-          <!-- FIX: Added Experience (INT in DB) -->
-          <div class="field">
-            <label for="trainerExperience">Experience (years)</label>
-            <input type="number" id="trainerExperience" name="trainerExperience" min="0" />
-          </div>
-        </div>
-        <div class="actions">
-          <button type="submit" class="btn-primary">Add Trainer</button>
-        </div>
-      </form>
-      <div id="trainerNotice" class="notice" role="alert"></div>
-      <div id="trainerList" class="trainer-grid"></div>
-      <p id="trainerEmptyState" class="empty">No trainers added yet.</p>
-    </section>
+        <div class="nav-label">Overview</div>
 
-    <!-- PAYMENT MANAGEMENT -->
-    <section class="panel" data-tab-content="payments">
-      <div class="section-header">
-        <h2>Payment Management</h2>
-        <p class="subtitle">Record payments — links a member to a membership plan with amount and mode.</p>
+        <button
+          type="button"
+          class="tab-btn active"
+          data-tab-target="dashboard"
+          aria-selected="true"
+          id="tab-dashboard"
+        >
+          <!-- Dashboard icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+            <rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/>
+          </svg>
+          Dashboard
+        </button>
+
+        <div class="nav-label">People</div>
+
+        <button
+          type="button"
+          class="tab-btn"
+          data-tab-target="members"
+          aria-selected="false"
+          id="tab-members"
+        >
+          <!-- Users icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          Members
+        </button>
+
+        <button
+          type="button"
+          class="tab-btn"
+          data-tab-target="trainers"
+          aria-selected="false"
+          id="tab-trainers"
+        >
+          <!-- Dumbbell / activity icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+            <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+            <line x1="6" y1="1" x2="6" y2="4"/>
+            <line x1="10" y1="1" x2="10" y2="4"/>
+            <line x1="14" y1="1" x2="14" y2="4"/>
+          </svg>
+          Trainers
+        </button>
+
+        <div class="nav-label">Finance</div>
+
+        <button
+          type="button"
+          class="tab-btn"
+          data-tab-target="payments"
+          aria-selected="false"
+          id="tab-payments"
+        >
+          <!-- Credit card icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+            <line x1="1" y1="10" x2="23" y2="10"/>
+          </svg>
+          Payments
+        </button>
+
+        <div class="nav-label">Plans</div>
+
+        <button
+          type="button"
+          class="tab-btn"
+          data-tab-target="enrollment"
+          aria-selected="false"
+          id="tab-enrollment"
+        >
+          <!-- File text icon -->
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+          Enrollment
+        </button>
+
+      </nav>
+      <!-- /.sidebar-nav -->
+
+      <!-- Footer / Logout -->
+      <div class="sidebar-footer">
+        <button type="button" id="logoutBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;flex-shrink:0">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+          </svg>
+          Sign Out
+        </button>
       </div>
-      <form id="paymentForm">
-        <div class="grid">
-          <!-- DB: payment(payment_id, amount, payment_mode, status, member_id FK, plan_id FK, payment_date) -->
-          <div class="field">
-            <label for="paymentMemberId">Member</label>
-            <select id="paymentMemberId" name="paymentMemberId" required>
-              <option value="">Select Member</option>
-            </select>
+
+    </aside>
+    <!-- /.sidebar -->
+
+
+    <!-- ────────────────────────────────────────────────────────────────────
+         MAIN WRAPPER
+    ─────────────────────────────────────────────────────────────────────── -->
+    <div class="main-wrapper">
+
+      <!-- ── Topbar ──────────────────────────────────────────────────────── -->
+      <header class="topbar">
+
+        <div class="topbar-search">
+          <svg class="topbar-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <input
+            type="search"
+            id="memberSearch"
+            placeholder="Search members by name…"
+            aria-label="Search members"
+          />
+        </div>
+
+        <div class="topbar-right">
+          <span class="topbar-date" id="topbarDate"></span>
+
+          <button class="topbar-bell" aria-label="Notifications" title="Notifications">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+              <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+            </svg>
+          </button>
+
+          <div class="topbar-avatar" title="Admin">A</div>
+        </div>
+
+      </header>
+      <!-- /.topbar -->
+
+
+      <!-- ── Page Content ────────────────────────────────────────────────── -->
+      <main class="page-content">
+
+
+        <!-- ══════════════════════════════════════════════════════════════
+             DASHBOARD TAB
+        ═══════════════════════════════════════════════════════════════ -->
+        <section data-tab-content="dashboard">
+
+          <!-- Page Header -->
+          <div class="page-header">
+            <div>
+              <div class="page-title">Dashboard</div>
+              <div class="page-sub">Welcome back, Admin. Here's what's happening today.</div>
+            </div>
           </div>
-          <div class="field">
-            <label for="paymentPlanId">Membership Plan</label>
-            <select id="paymentPlanId" name="paymentPlanId" required>
-              <option value="">Select Plan</option>
-            </select>
+
+          <!-- ── Stat Cards ─────────────────────────────────────────────── -->
+          <div class="stats-grid">
+
+            <div class="stat-card blue">
+              <div class="stat-icon blue">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px">
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                  <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
+              </div>
+              <div class="stat-value" id="totalMembersCount">0</div>
+              <div class="stat-label">Total Members</div>
+              <div class="stat-trend up">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                Active roster
+              </div>
+            </div>
+
+            <div class="stat-card green">
+              <div class="stat-icon green">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px">
+                  <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+                  <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+                  <line x1="6" y1="1" x2="6" y2="4"/>
+                  <line x1="10" y1="1" x2="10" y2="4"/>
+                  <line x1="14" y1="1" x2="14" y2="4"/>
+                </svg>
+              </div>
+              <div class="stat-value" id="totalTrainersCount">0</div>
+              <div class="stat-label">Active Trainers</div>
+              <div class="stat-trend up">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                On staff
+              </div>
+            </div>
+
+            <div class="stat-card orange">
+              <div class="stat-icon orange">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px">
+                  <line x1="12" y1="1" x2="12" y2="23"/>
+                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+                </svg>
+              </div>
+              <div class="stat-value" id="totalRevenueValue">₹0.00</div>
+              <div class="stat-label">Total Revenue</div>
+              <div class="stat-trend up">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:11px;height:11px"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                All time
+              </div>
+            </div>
+
+            <div class="stat-card purple">
+              <div class="stat-icon purple">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+              </div>
+              <div class="stat-value" id="dashActivePlans">3</div>
+              <div class="stat-label">Membership Plans</div>
+              <div class="stat-trend neutral">Basic · Premium · Pro</div>
+            </div>
+
           </div>
-          <div class="field">
-            <label for="paymentAmount">Amount (₹)</label>
-            <input type="number" id="paymentAmount" name="paymentAmount" min="0" step="0.01" required />
+          <!-- /.stats-grid -->
+
+          <!-- ── Quick Actions ───────────────────────────────────────────── -->
+          <div class="quick-actions">
+
+            <button
+              type="button"
+              class="qa-btn blue"
+              id="qaAddMember"
+              onclick="document.querySelector('[data-tab-target=members]').click()"
+              title="Go to Members"
+            >
+              <div class="qa-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px">
+                  <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                  <circle cx="9" cy="7" r="4"/>
+                  <line x1="19" y1="8" x2="19" y2="14"/>
+                  <line x1="22" y1="11" x2="16" y2="11"/>
+                </svg>
+              </div>
+              <div class="qa-text">
+                <div class="qa-label">Add Member</div>
+                <div class="qa-sub">Register new member</div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              class="qa-btn green"
+              id="qaAddTrainer"
+              onclick="document.querySelector('[data-tab-target=trainers]').click()"
+              title="Go to Trainers"
+            >
+              <div class="qa-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px">
+                  <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+                  <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+                  <line x1="6" y1="1" x2="6" y2="4"/>
+                  <line x1="10" y1="1" x2="10" y2="4"/>
+                  <line x1="14" y1="1" x2="14" y2="4"/>
+                </svg>
+              </div>
+              <div class="qa-text">
+                <div class="qa-label">Add Trainer</div>
+                <div class="qa-sub">Onboard a trainer</div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              class="qa-btn orange"
+              id="qaRecordPayment"
+              onclick="document.querySelector('[data-tab-target=payments]').click()"
+              title="Go to Payments"
+            >
+              <div class="qa-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px">
+                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                  <line x1="1" y1="10" x2="23" y2="10"/>
+                </svg>
+              </div>
+              <div class="qa-text">
+                <div class="qa-label">Record Payment</div>
+                <div class="qa-sub">Log a transaction</div>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              class="qa-btn purple"
+              id="qaNewEnrollment"
+              onclick="document.querySelector('[data-tab-target=enrollment]').click()"
+              title="Go to Enrollment"
+            >
+              <div class="qa-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                  <line x1="16" y1="13" x2="8" y2="13"/>
+                  <line x1="16" y1="17" x2="8" y2="17"/>
+                </svg>
+              </div>
+              <div class="qa-text">
+                <div class="qa-label">New Enrollment</div>
+                <div class="qa-sub">Enroll a member</div>
+              </div>
+            </button>
+
           </div>
-          <div class="field">
-            <label for="paymentMode">Payment Mode</label>
-            <select id="paymentMode" name="paymentMode" required>
+          <!-- /.quick-actions -->
+
+          <!-- ── Charts Row ──────────────────────────────────────────────── -->
+          <div class="charts-row">
+
+            <div class="chart-card">
+              <div class="chart-title">Revenue Over Time</div>
+              <div style="position:relative;height:220px">
+                <canvas id="revenueChart"></canvas>
+              </div>
+            </div>
+
+            <div class="chart-card">
+              <div class="chart-title">Enrollment Breakdown</div>
+              <div style="position:relative;height:220px">
+                <canvas id="enrollmentChart"></canvas>
+              </div>
+            </div>
+
+          </div>
+          <!-- /.charts-row -->
+
+          <!-- ── Membership Plans + Recent Activity ─────────────────────── -->
+          <div class="dash-bottom">
+
+            <!-- Plans Grid -->
+            <div class="section-card">
+              <div class="section-head">
+                <h3>Membership Plans</h3>
+                <span style="font-size:11px;color:var(--muted);font-weight:500">Auto-loaded from DB</span>
+              </div>
+              <div id="plansGrid"></div>
+            </div>
+
+            <!-- Recent Payments -->
+            <div class="section-card">
+              <div class="section-head">
+                <h3>Recent Payments</h3>
+                <button
+                  type="button"
+                  class="btn btn-secondary btn-sm"
+                  onclick="document.querySelector('[data-tab-target=payments]').click()"
+                >View all</button>
+              </div>
+              <div id="recentPaymentsList" class="recent-list">
+                <div class="empty" style="padding:32px 16px">No payments yet — go to Payments to record one.</div>
+              </div>
+            </div>
+
+          </div>
+          <!-- /.dash-bottom -->
+
+        </section>
+        <!-- /dashboard -->
+
+
+        <!-- ══════════════════════════════════════════════════════════════
+             MEMBERS TAB  (placeholder — Phase 3 will fill this in)
+        ═══════════════════════════════════════════════════════════════ -->
+        <section data-tab-content="members">
+
+          <div class="page-header">
+            <div>
+              <div class="page-title">Members</div>
+              <div class="page-sub">Register and manage all gym members.</div>
+            </div>
+            <button type="button" class="btn btn-primary" id="fetchMembersBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
+                <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/>
+              </svg>
+              Fetch Members
+            </button>
+          </div>
+
+          <!-- Notices / loader / list — IDs required by JS -->
+          <div id="formNotice" class="notice" role="alert"></div>
+          <div id="membersNotice" class="notice" role="alert"></div>
+
+          <div id="membersLoader" style="display:none;align-items:center;gap:10px;padding:20px 0;color:var(--muted);font-size:13px">
+            <div class="loader"></div>
+            <span>Fetching members…</span>
+          </div>
+
+          <div id="membersList"></div>
+          <p id="emptyState" class="empty">No members loaded yet. Click <strong>Fetch Members</strong> to load.</p>
+
+          <!-- memberForm — hidden until Phase 3 modal is built -->
+          <form id="memberForm" style="display:none">
+            <input type="text"   id="name"    name="name"    />
+            <select              id="gender"  name="gender"  ><option value="">Select</option><option value="Male">Male</option><option value="Female">Female</option></select>
+            <input type="tel"    id="phone"   name="phone"   />
+            <input type="email"  id="email"   name="email"   />
+            <input type="date"   id="dob"     name="dob"     />
+            <input type="text"   id="address" name="address" />
+            <button type="submit">Submit</button>
+          </form>
+
+        </section>
+        <!-- /members -->
+
+
+        <!-- ══════════════════════════════════════════════════════════════
+             TRAINERS TAB  (placeholder — Phase 4 will fill this in)
+        ═══════════════════════════════════════════════════════════════ -->
+        <section data-tab-content="trainers">
+
+          <div class="page-header">
+            <div>
+              <div class="page-title">Trainers</div>
+              <div class="page-sub">Add and manage your gym's trainer roster.</div>
+            </div>
+          </div>
+
+          <!-- IDs required by JS -->
+          <div id="trainerNotice" class="notice" role="alert"></div>
+          <div id="trainerList" class="trainer-grid"></div>
+          <p id="trainerEmptyState" class="empty">No trainers added yet.</p>
+
+          <!-- trainerForm — hidden stub -->
+          <form id="trainerForm" style="display:none">
+            <input type="text"  id="trainerName"       name="trainerName"       />
+            <input type="text"  id="specialization"    name="specialization"    />
+            <input type="tel"   id="trainerPhone"      name="trainerPhone"      />
+            <input type="email" id="trainerEmail"      name="trainerEmail"      />
+            <input type="number" id="trainerExperience" name="trainerExperience" />
+            <button type="submit">Submit</button>
+          </form>
+
+        </section>
+        <!-- /trainers -->
+
+
+        <!-- ══════════════════════════════════════════════════════════════
+             PAYMENTS TAB  (placeholder — Phase 5 will fill this in)
+        ═══════════════════════════════════════════════════════════════ -->
+        <section data-tab-content="payments">
+
+          <div class="page-header">
+            <div>
+              <div class="page-title">Payments</div>
+              <div class="page-sub">Record and review all payment transactions.</div>
+            </div>
+          </div>
+
+          <!-- IDs required by JS -->
+          <div id="paymentNotice" class="notice" role="alert"></div>
+          <ul id="paymentHistory" style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px"></ul>
+          <p id="paymentEmptyState" class="empty">No payments recorded yet.</p>
+
+          <!-- paymentForm — hidden stub -->
+          <form id="paymentForm" style="display:none">
+            <select id="paymentMemberId" name="paymentMemberId"><option value="">Select Member</option></select>
+            <select id="paymentPlanId"   name="paymentPlanId"  ><option value="">Select Plan</option></select>
+            <input  type="number" id="paymentAmount" name="paymentAmount" />
+            <select id="paymentMode"   name="paymentMode"  >
               <option value="">Select Mode</option>
-              <option value="Cash">Cash</option>
-              <option value="Card">Card</option>
-              <option value="UPI">UPI</option>
-              <option value="Net Banking">Net Banking</option>
+              <option value="Cash">Cash</option><option value="Card">Card</option>
+              <option value="UPI">UPI</option><option value="Net Banking">Net Banking</option>
             </select>
-          </div>
-          <div class="field">
-            <label for="paymentDate">Payment Date</label>
-            <input type="date" id="paymentDate" name="paymentDate" />
-          </div>
-          <div class="field">
-            <label for="paymentStatus">Status</label>
-            <select id="paymentStatus" name="paymentStatus" required>
+            <input  type="date" id="paymentDate"   name="paymentDate"   />
+            <select id="paymentStatus" name="paymentStatus">
               <option value="">Select Status</option>
-              <option value="Pending">Pending</option>
-              <option value="Completed">Completed</option>
-              <option value="Failed">Failed</option>
+              <option value="Pending">Pending</option><option value="Completed">Completed</option><option value="Failed">Failed</option>
             </select>
-          </div>
-        </div>
-        <div class="actions">
-          <button type="submit" class="btn-primary">Add Payment</button>
-        </div>
-      </form>
-      <div id="paymentNotice" class="notice" role="alert"></div>
-      <ul id="paymentHistory" class="payment-history"></ul>
-      <p id="paymentEmptyState" class="empty">No payments recorded yet.</p>
-    </section>
+            <button type="submit">Submit</button>
+          </form>
 
-    <!-- ENROLLMENT TAB — matches enrollment(enrollment_id, member_id, plan_id, start_date, end_date, status) -->
-    <section class="panel" data-tab-content="enrollment">
-      <div class="section-header">
-        <h2>Member Enrollment</h2>
-        <p class="subtitle">Enroll members into membership plans (member_id + plan_id + dates).</p>
-      </div>
-      <form id="enrollmentForm">
-        <div class="grid">
-          <div class="field">
-            <label for="enrollMemberId">Member</label>
-            <select id="enrollMemberId" name="enrollMemberId" required>
-              <option value="">Select Member</option>
-            </select>
+        </section>
+        <!-- /payments -->
+
+
+        <!-- ══════════════════════════════════════════════════════════════
+             ENROLLMENT TAB  (placeholder — Phase 6 will fill this in)
+        ═══════════════════════════════════════════════════════════════ -->
+        <section data-tab-content="enrollment">
+
+          <div class="page-header">
+            <div>
+              <div class="page-title">Enrollment</div>
+              <div class="page-sub">Enroll members into membership plans.</div>
+            </div>
           </div>
-          <div class="field">
-            <label for="enrollPlanId">Membership Plan</label>
-            <select id="enrollPlanId" name="enrollPlanId" required>
-              <option value="">Select Plan</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="enrollStartDate">Start Date</label>
-            <input type="date" id="enrollStartDate" name="enrollStartDate" required />
-          </div>
-          <div class="field">
-            <label for="enrollEndDate">End Date</label>
-            <input type="date" id="enrollEndDate" name="enrollEndDate" required />
-          </div>
-          <div class="field">
-            <label for="enrollStatus">Status</label>
-            <select id="enrollStatus" name="enrollStatus" required>
+
+          <!-- IDs required by JS -->
+          <div id="enrollmentNotice" class="notice" role="alert"></div>
+          <div id="enrollmentList" class="enrollment-grid"></div>
+          <p id="enrollmentEmptyState" class="empty">No enrollments recorded yet.</p>
+
+          <!-- enrollmentForm — hidden stub -->
+          <form id="enrollmentForm" style="display:none">
+            <select id="enrollMemberId"  name="enrollMemberId" ><option value="">Select Member</option></select>
+            <select id="enrollPlanId"    name="enrollPlanId"   ><option value="">Select Plan</option></select>
+            <input  type="date" id="enrollStartDate" name="enrollStartDate" />
+            <input  type="date" id="enrollEndDate"   name="enrollEndDate"   />
+            <select id="enrollStatus" name="enrollStatus">
               <option value="">Select Status</option>
-              <option value="Active">Active</option>
-              <option value="Inactive">Inactive</option>
-              <option value="Expired">Expired</option>
+              <option value="Active">Active</option><option value="Inactive">Inactive</option><option value="Expired">Expired</option>
             </select>
-          </div>
-        </div>
-        <div class="actions">
-          <button type="submit" class="btn-primary">Create Enrollment</button>
-        </div>
-      </form>
-      <div id="enrollmentNotice" class="notice" role="alert"></div>
-      <div id="enrollmentList" class="enrollment-grid"></div>
-      <p id="enrollmentEmptyState" class="empty">No enrollments recorded yet.</p>
-    </section>
+            <button type="submit">Submit</button>
+          </form>
+
+        </section>
+        <!-- /enrollment -->
+
+
+      </main>
+      <!-- /.page-content -->
+
+    </div>
+    <!-- /.main-wrapper -->
+
   </div>
+  <!-- /#appContainer -->
 
-  <!-- EDIT MEMBER MODAL -->
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       EDIT MEMBER MODAL  (ID required by JS — Phase 7 will fully style this)
+  ════════════════════════════════════════════════════════════════════════ -->
   <div id="editMemberModal" class="modal-overlay" role="dialog" aria-modal="true">
-    <div class="modal">
-      <h3>Edit Member</h3>
-      <p class="subtitle">Update member details and save changes.</p>
-      <form id="editMemberForm">
-        <input type="hidden" id="editMemberIndex" />
-        <div class="grid">
-          <div class="field">
-            <label for="editName">Name</label>
-            <input type="text" id="editName" required />
+    <div class="modal-panel">
+      <div class="modal-header">
+        <h2>Edit Member</h2>
+        <button type="button" class="modal-close" aria-label="Close" id="cancelEditBtn">✕</button>
+      </div>
+      <div class="modal-body">
+        <form id="editMemberForm">
+          <input type="hidden" id="editMemberIndex" />
+          <div class="grid">
+            <div class="field">
+              <label for="editName">Name</label>
+              <input type="text" id="editName" required />
+            </div>
+            <div class="field">
+              <label for="editGender">Gender</label>
+              <select id="editGender" required>
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="editPhone">Phone</label>
+              <input type="tel" id="editPhone" required />
+            </div>
+            <div class="field">
+              <label for="editEmail">Email</label>
+              <input type="email" id="editEmail" />
+            </div>
           </div>
-          <div class="field">
-            <label for="editGender">Gender</label>
-            <select id="editGender" required>
-              <option value="">Select Gender</option>
-              <option value="Male">Male</option>
-              <option value="Female">Female</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="editPhone">Phone</label>
-            <input type="tel" id="editPhone" required />
-          </div>
-          <div class="field">
-            <label for="editEmail">Email</label>
-            <input type="email" id="editEmail" />
-          </div>
-        </div>
-        <div class="modal-actions">
-          <button type="button" id="cancelEditBtn" class="btn-secondary">Cancel</button>
-          <button type="submit" id="saveEditBtn" class="btn-primary">Save Changes</button>
-        </div>
-      </form>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('cancelEditBtn').click()">Cancel</button>
+        <button type="submit" form="editMemberForm" class="btn btn-primary" id="saveEditBtn">Save Changes</button>
+      </div>
     </div>
   </div>
 
+
+  <!-- ─── External Scripts ──────────────────────────────────────────────── -->
+  <script src="gym.js"></script>
+
+  <!-- Topbar live date (tiny, safe to inline) -->
   <script>
-    // ─── CONFIG ────────────────────────────────────────────────────────────────
-    const API_BASE = "http://localhost:5001";
-    const MEMBERS_API = `${API_BASE}/members`;
-    const TRAINERS_API = `${API_BASE}/trainers`;
-    const PAYMENTS_API = `${API_BASE}/payments`;
-    const PLANS_API = `${API_BASE}/plans`;
-    const ENROLLMENT_API = `${API_BASE}/enrollments`;
-
-    const GYM_ID = 1; // Default Gym_ID for all records
-
-    const AUTH_USERNAME = "admin";
-    const AUTH_PASSWORD = "1234";
-    const AUTH_KEY = "isLoggedIn";
-
-    // ─── LOCAL STATE ───────────────────────────────────────────────────────────
-    // Trainers, payments, enrollments stored locally as fallback
-    const TRAINERS_KEY = "gms_trainers";
-    const PAYMENTS_KEY = "gms_payments";
-    const ENROLLMENTS_KEY = "gms_enrollments";
-    const PLANS_KEY = "gms_plans";
-
-    let allMembers = [];
-    let trainers = [];
-    let payments = [];
-    let enrollments = [];
-    let plans = [];
-
-    // Fallback plans using snake_case matching membership_plan table
-    const FALLBACK_PLANS = [
-      { plan_id: 1, plan_name: "Basic", duration: 1, fee: 2000.00, description: "Standard gym access, 1 fitness assessment, locker room." },
-      { plan_id: 2, plan_name: "Premium", duration: 3, fee: 5000.00, description: "Unlimited access, group classes, 2 personal sessions." },
-      { plan_id: 3, plan_name: "Pro", duration: 6, fee: 9000.00, description: "All Premium features + nutrition guidance + weekly tracking." },
-    ];
-
-    // ─── DOM REFS ──────────────────────────────────────────────────────────────
-    const $ = id => document.getElementById(id);
-    const appContainer = $("appContainer");
-    const loginScreen = $("loginScreen");
-    const loginForm = $("loginForm");
-    const loginUsername = $("loginUsername");
-    const loginPassword = $("loginPassword");
-    const loginNotice = $("loginNotice");
-    const logoutBtn = $("logoutBtn");
-    const memberForm = $("memberForm");
-    const fetchMembersBtn = $("fetchMembersBtn");
-    const membersList = $("membersList");
-    const emptyState = $("emptyState");
-    const formNotice = $("formNotice");
-    const membersNotice = $("membersNotice");
-    const totalMembersCount = $("totalMembersCount");
-    const memberSearch = $("memberSearch");
-    const trainerForm = $("trainerForm");
-    const trainerNotice = $("trainerNotice");
-    const trainerList = $("trainerList");
-    const trainerEmptyState = $("trainerEmptyState");
-    const paymentForm = $("paymentForm");
-    const paymentNotice = $("paymentNotice");
-    const paymentHistory = $("paymentHistory");
-    const paymentEmptyState = $("paymentEmptyState");
-    const totalTrainersCount = $("totalTrainersCount");
-    const totalRevenueValue = $("totalRevenueValue");
-    const toastContainer = $("toastContainer");
-    const membersLoader = $("membersLoader");
-    const plansGrid = $("plansGrid");
-    const enrollmentForm = $("enrollmentForm");
-    const enrollmentNotice = $("enrollmentNotice");
-    const enrollmentList = $("enrollmentList");
-    const enrollmentEmptyState = $("enrollmentEmptyState");
-    const tabButtons = document.querySelectorAll(".tab-btn");
-    const tabContents = document.querySelectorAll("[data-tab-content]");
-    const editMemberModal = $("editMemberModal");
-    const editMemberForm = $("editMemberForm");
-    const editMemberIndex = $("editMemberIndex");
-    const editName = $("editName");
-    const editGender = $("editGender");
-    const editPhone = $("editPhone");
-    const editEmail = $("editEmail");
-    const cancelEditBtn = $("cancelEditBtn");
-    const saveEditBtn = $("saveEditBtn");
-
-    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const PHONE_REGEX = /^\d{10}$/;
-
-    // ─── TABS ──────────────────────────────────────────────────────────────────
-    function setActiveTab(targetTab) {
-      tabButtons.forEach(btn => {
-        const active = btn.dataset.tabTarget === targetTab;
-        btn.classList.toggle("active", active);
-        btn.setAttribute("aria-selected", String(active));
+    (function () {
+      var el = document.getElementById('topbarDate');
+      if (el) el.textContent = new Date().toLocaleDateString('en-IN', {
+        weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
       });
-      tabContents.forEach(sec => {
-        const show = sec.dataset.tabContent === targetTab;
-        if (show) {
-          sec.style.display = "";
-          sec.classList.remove("tab-content-enter");
-          void sec.offsetWidth;
-          sec.classList.add("tab-content-enter");
-        } else {
-          sec.style.display = "none";
-          sec.classList.remove("tab-content-enter");
-        }
-      });
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-
-    tabButtons.forEach(btn => btn.addEventListener("click", () => setActiveTab(btn.dataset.tabTarget)));
-
-    // ─── AUTH ──────────────────────────────────────────────────────────────────
-    let _isLoggedIn = false;
-    const isAuthenticated = () => {
-      try { return localStorage.getItem(AUTH_KEY) === "true"; } catch { return _isLoggedIn; }
-    };
-    const setAuthenticated = v => {
-      _isLoggedIn = !!v;
-      try { localStorage.setItem(AUTH_KEY, v ? "true" : "false"); } catch { /* blocked */ }
-    };
-
-    function showApp() {
-      loginScreen.style.display = "none";
-      appContainer.style.display = "";
-      setActiveTab("dashboard");
-    }
-    function showLogin() {
-      appContainer.style.display = "none";
-      loginScreen.style.display = "flex";
-      loginUsername.focus();
-    }
-
-    loginForm.addEventListener("submit", e => {
-      e.preventDefault();
-      clearNotice(loginNotice);
-      const uv = validateRequiredField(loginUsername, "Username");
-      const pv = validateRequiredField(loginPassword, "Password");
-      if (!uv || !pv) { showNotice(loginNotice, "Please enter username and password.", "error"); return; }
-      if (loginUsername.value.trim() === AUTH_USERNAME && loginPassword.value.trim() === AUTH_PASSWORD) {
-        setAuthenticated(true);
-        loginForm.reset();
-        showApp();
-        showToast("Login successful.");
-      } else {
-        showNotice(loginNotice, "Invalid username or password.", "error");
-      }
-    });
-
-    logoutBtn.addEventListener("click", () => { setAuthenticated(false); showLogin(); showToast("Logged out successfully."); });
-
-    // ─── TOAST ─────────────────────────────────────────────────────────────────
-    function showToast(message, type = "success") {
-      const toast = document.createElement("div");
-      toast.className = `toast ${type}`;
-      toast.textContent = message;
-      toastContainer.appendChild(toast);
-      setTimeout(() => toast.remove(), 2400);
-    }
-
-    // ─── NOTICE / FIELD ERRORS ─────────────────────────────────────────────────
-    function showNotice(el, msg, type) { el.textContent = msg; el.className = `notice ${type}`; el.style.display = "block"; }
-    function clearNotice(el) { el.textContent = ""; el.className = "notice"; el.style.display = "none"; }
-
-    function setFieldError(input, msg) {
-      const field = input.closest(".field");
-      if (!field) return;
-      field.classList.add("has-error");
-      let err = field.querySelector(".error-text");
-      if (!err) { err = document.createElement("p"); err.className = "error-text"; field.appendChild(err); }
-      err.textContent = msg;
-    }
-    function clearFieldError(input) {
-      const field = input.closest(".field");
-      if (!field) return;
-      field.classList.remove("has-error");
-      field.querySelector(".error-text")?.remove();
-    }
-    function clearFormErrors(form) {
-      form.querySelectorAll(".field.has-error").forEach(f => f.classList.remove("has-error"));
-      form.querySelectorAll(".error-text").forEach(e => e.remove());
-    }
-
-    function validateRequiredField(input, label) {
-      if (!input.value.trim()) { setFieldError(input, `${label} is required.`); return false; }
-      clearFieldError(input); return true;
-    }
-    function validateEmailField(input, required = false) {
-      const v = input.value.trim();
-      if (!v) { if (required) { setFieldError(input, "Email is required."); return false; } clearFieldError(input); return true; }
-      if (!EMAIL_REGEX.test(v)) { setFieldError(input, "Please enter a valid email address."); return false; }
-      clearFieldError(input); return true;
-    }
-    function validatePhoneField(input) {
-      const v = input.value.trim();
-      if (!v) { setFieldError(input, "Phone is required."); return false; }
-      if (!PHONE_REGEX.test(v)) { setFieldError(input, "Phone must be numeric and exactly 10 digits."); return false; }
-      clearFieldError(input); return true;
-    }
-
-    // ─── LOCAL STORAGE HELPERS ─────────────────────────────────────────────────
-    function loadArr(key) {
-      try { const r = localStorage.getItem(key); if (!r) return []; const p = JSON.parse(r); return Array.isArray(p) ? p : []; }
-      catch { return []; }
-    }
-    function saveArr(key, arr) {
-      try { localStorage.setItem(key, JSON.stringify(arr)); } catch { /* blocked in file:// */ }
-    }
-
-    // ─── ESCAPE / HIGHLIGHT ────────────────────────────────────────────────────
-    function escapeHtml(v) {
-      return String(v || "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#39;");
-    }
-    function highlightMatch(text, term) {
-      const safe = escapeHtml(text || "Unknown");
-      if (!term) return safe;
-      return safe.replace(new RegExp(`(${term.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "ig"), '<span class="highlight">$1</span>');
-    }
-
-    // ─── BUTTON LOADING ────────────────────────────────────────────────────────
-    function setButtonLoading(btn, loading, text) {
-      if (!btn) return;
-      if (loading) { btn.dataset.origText = btn.textContent; btn.textContent = text; btn.disabled = true; }
-      else { btn.disabled = false; btn.textContent = btn.dataset.origText || btn.textContent; }
-    }
-
-    // ─── DASHBOARD STATS ───────────────────────────────────────────────────────
-    function updateDashboardStats() {
-      totalMembersCount.textContent = String(allMembers.length);
-      totalTrainersCount.textContent = String(trainers.length);
-      const total = payments.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
-      totalRevenueValue.textContent = total.toLocaleString("en-IN", {
-        style: "currency",
-        currency: "INR",
-        minimumFractionDigits: 2,
-      });
-    }
-
-    // ─── MEMBERSHIP PLANS ──────────────────────────────────────────────────────
-    async function fetchPlans() {
-      try {
-        const res = await fetch(PLANS_API);
-        if (!res.ok) throw new Error("Backend plans unavailable");
-        const json = await res.json();
-        const rows = json.data ?? (Array.isArray(json) ? json : []);
-        if (rows.length === 0) throw new Error("Empty plans");
-        plans = rows;
-      } catch {
-        plans = [...FALLBACK_PLANS];
-      }
-      renderPlans();
-      populatePlanDropdowns();
-    }
-
-    function renderPlans() {
-      const colors = ["basic-plan", "premium-plan", "pro-plan"];
-      plansGrid.innerHTML = plans.map((p, i) => `
-          <article class="plan-card ${colors[i % colors.length]}">
-            <h3>${escapeHtml(p.plan_name || p.Plan_Name)}</h3>
-            <p class="plan-price">₹${parseFloat(p.fee || p.Fee || 0).toFixed(2)}</p>
-            <p class="plan-duration">Duration: ${escapeHtml(String(p.duration || p.Duration || "—"))} month(s)</p>
-            <p style="font-size:0.88rem;color:#475569;margin-top:8px">${escapeHtml(p.description || p.Description || "")}</p>
-          </article>
-        `).join("");
-    }
-
-    function populatePlanDropdowns() {
-      // Populate both enrollment plan dropdown and payment plan dropdown
-      [$("enrollPlanId"), $("paymentPlanId")].forEach(sel => {
-        if (!sel) return;
-        const prev = sel.value;
-        sel.innerHTML = '<option value="">Select Plan</option>';
-        plans.forEach(p => {
-          const opt = document.createElement("option");
-          opt.value = p.plan_id || p.Plan_ID;
-          opt.textContent = `${p.plan_name || p.Plan_Name} (${p.duration || p.Duration}mo — ₹${parseFloat(p.fee || p.Fee || 0).toFixed(0)})`;
-          sel.appendChild(opt);
-        });
-        if (prev) sel.value = prev;
-      });
-    }
-
-    // ─── MEMBER DROPDOWN POPULATE ──────────────────────────────────────────────
-    function populateMemberDropdowns() {
-      // Both payment and enrollment have member selectors (after DB migration)
-      [$("paymentMemberId"), $("enrollMemberId")].forEach(sel => {
-        if (!sel) return;
-        const prev = sel.value;
-        sel.innerHTML = '<option value="">Select Member</option>';
-        allMembers.forEach(m => {
-          const opt = document.createElement("option");
-          opt.value = m.id || m.member_id;
-          opt.textContent = `${m.name} (ID: ${m.id || m.member_id})`;
-          sel.appendChild(opt);
-        });
-        if (prev) sel.value = prev;
-      });
-    }
-
-    // ─── MEMBERS ───────────────────────────────────────────────────────────────
-    async function fetchMembers() {
-      clearNotice(membersNotice);
-      setButtonLoading(fetchMembersBtn, true, "Fetching...");
-      membersLoader.style.display = "flex";
-      try {
-        const res = await fetch(MEMBERS_API);
-        if (!res.ok) throw new Error("Backend not connected");
-        const json = await res.json();
-        const rows = json.data ?? (Array.isArray(json) ? json : []);
-        allMembers = rows.map(m => ({
-          ...m,
-          id: m.member_id || m.id,
-          gym_id: m.gym_id || GYM_ID,
-        }));
-        updateDashboardStats();
-        renderMembers(allMembers);
-        populateMemberDropdowns();
-        showToast("Members loaded successfully.");
-      } catch {
-        allMembers = [];
-        updateDashboardStats();
-        renderMembers(allMembers);
-        showNotice(membersNotice, "Backend not connected", "error");
-        showToast("Backend not connected", "error");
-      } finally {
-        setButtonLoading(fetchMembersBtn, false, "Fetching...");
-        membersLoader.style.display = "none";
-      }
-    }
-
-    fetchMembersBtn.addEventListener("click", fetchMembers);
-
-    function renderMembers(members) {
-      membersList.innerHTML = "";
-      const term = memberSearch.value.trim().toLowerCase();
-      const filtered = members
-        .map((m, i) => ({ ...m, _idx: i }))
-        .filter(m => (m.name || "").toLowerCase().includes(term));
-
-      if (filtered.length === 0) {
-        emptyState.style.display = "block";
-        emptyState.textContent = term ? "No matching members found." : "No members found.";
-        return;
-      }
-      emptyState.style.display = "none";
-
-      filtered.forEach(m => {
-        const card = document.createElement("article");
-        card.className = "member-card";
-        card.innerHTML = `
-            <h3>${highlightMatch(m.name || "Unknown", term)}</h3>
-            <p><strong>Gender:</strong> ${escapeHtml(m.gender || "—")}</p>
-            <p><strong>Phone:</strong> ${escapeHtml(m.phone || "—")}</p>
-            <p><strong>Email:</strong> ${escapeHtml(m.email || "—")}</p>
-            <div class="card-actions">
-              <button type="button" class="btn-soft" data-member-edit="${m._idx}">Edit</button>
-              <button type="button" class="btn-danger-soft" data-member-delete="${m._idx}">Delete</button>
-            </div>`;
-        membersList.appendChild(card);
-      });
-
-      document.querySelectorAll("[data-member-edit]").forEach(btn => {
-        btn.addEventListener("click", () => openEditModal(parseInt(btn.dataset.memberEdit)));
-      });
-      document.querySelectorAll("[data-member-delete]").forEach(btn => {
-        btn.addEventListener("click", async () => {
-          const idx = parseInt(btn.dataset.memberDelete);
-          if (idx < 0 || !allMembers[idx]) return;
-          if (!confirm("Delete this member?")) return;
-          const member = allMembers[idx];
-          let ok = false;
-          if (member.id) {
-            try {
-              const res = await fetch(`${MEMBERS_API}/${member.id}`, { method: "DELETE" });
-              ok = res.ok;
-            } catch { ok = false; }
-          }
-          allMembers.splice(idx, 1);
-          updateDashboardStats();
-          renderMembers(allMembers);
-          populateMemberDropdowns();
-          showToast(ok ? "Member deleted successfully." : "Backend unavailable — removed locally.", ok ? "success" : "error");
-        });
-      });
-    }
-
-    memberSearch.addEventListener("input", () => renderMembers(allMembers));
-
-    memberForm.addEventListener("submit", async e => {
-      e.preventDefault();
-      clearNotice(formNotice);
-      clearFormErrors(memberForm);
-      const submitBtn = memberForm.querySelector('button[type="submit"]');
-      const fd = new FormData(memberForm);
-
-      // Payload matches member table snake_case column names
-      const payload = {
-        name: fd.get("name")?.toString().trim(),
-        gender: fd.get("gender")?.toString().trim(),
-        date_of_birth: fd.get("dob")?.toString().trim(),
-        phone: fd.get("phone")?.toString().trim(),
-        email: fd.get("email")?.toString().trim() || null,
-        address: fd.get("address")?.toString().trim(),
-        branch_id: 1,
-        gym_id: GYM_ID,
-      };
-
-      let valid = true;
-      if (!validateRequiredField($("name"), "Name")) valid = false;
-      if (!validateRequiredField($("gender"), "Gender")) valid = false;
-      if (!validateRequiredField($("dob"), "DOB")) valid = false;
-      if (!validateRequiredField($("address"), "Address")) valid = false;
-      if (!validatePhoneField($("phone"))) valid = false;
-      if (!validateEmailField($("email"), false)) valid = false;
-      if (!valid) { showNotice(formNotice, "Please fix the highlighted fields.", "error"); return; }
-
-      try {
-        setButtonLoading(submitBtn, true, "Adding...");
-        const res = await fetch(MEMBERS_API, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        const d = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(d.message || "Failed");
-        showNotice(formNotice, "Member added successfully.", "success");
-        memberForm.reset();
-        await fetchMembers();
-        showToast("Member added successfully.");
-      } catch (err) {
-        showNotice(formNotice, `Could not add member: ${err.message}`, "error");
-        showToast(`Could not add member: ${err.message}`, "error");
-      } finally {
-        setButtonLoading(submitBtn, false, "Adding...");
-      }
-    });
-
-    // ─── EDIT MEMBER MODAL ─────────────────────────────────────────────────────
-    function openEditModal(idx) {
-      const m = allMembers[idx]; if (!m) return;
-      editMemberIndex.value = String(idx);
-      editName.value = m.name || ""; editGender.value = m.gender || "";
-      editPhone.value = m.phone || ""; editEmail.value = m.email || "";
-      editMemberModal.classList.add("show");
-    }
-    function closeEditModal() { editMemberModal.classList.remove("show"); editMemberForm.reset(); }
-
-    editMemberForm.addEventListener("submit", async e => {
-      e.preventDefault();
-      clearFormErrors(editMemberForm);
-      const idx = parseInt(editMemberIndex.value || "-1");
-      const existing = allMembers[idx]; if (!existing) { closeEditModal(); return; }
-
-      let valid = true;
-      if (!validateRequiredField(editName, "Name")) valid = false;
-      if (!validateRequiredField(editGender, "Gender")) valid = false;
-      if (!validatePhoneField(editPhone)) valid = false;
-      if (!validateEmailField(editEmail, false)) valid = false;
-      if (!valid) { showToast("Please fix the highlighted fields.", "error"); return; }
-
-      const updated = {
-        ...existing,
-        name: editName.value.trim(), gender: editGender.value.trim(),
-        phone: editPhone.value.trim(), email: editEmail.value.trim(),
-      };
-
-      setButtonLoading(saveEditBtn, true, "Saving...");
-      let ok = false;
-      if (existing.id) {
-        try {
-          const res = await fetch(`${MEMBERS_API}/${existing.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              name: updated.name,
-              gender: updated.gender,
-              phone: updated.phone,
-              email: updated.email || null,
-              address: updated.address || existing.address || "",
-              date_of_birth: updated.date_of_birth || existing.date_of_birth || "",
-              branch_id: existing.branch_id || 1,
-              gym_id: existing.gym_id || GYM_ID,
-            }),
-          });
-          ok = res.ok;
-        } catch { ok = false; }
-      }
-      allMembers[idx] = updated;
-      renderMembers(allMembers);
-      populateMemberDropdowns();
-      closeEditModal();
-      setButtonLoading(saveEditBtn, false, "Saving...");
-      showToast(ok ? "Member updated successfully." : "Backend unavailable — updated locally.", ok ? "success" : "error");
-    });
-
-    cancelEditBtn.addEventListener("click", closeEditModal);
-    editMemberModal.addEventListener("click", e => { if (e.target === editMemberModal) closeEditModal(); });
-
-    // ─── TRAINERS ──────────────────────────────────────────────────────────────
-    async function fetchTrainers() {
-      try {
-        const res = await fetch(TRAINERS_API);
-        if (!res.ok) throw new Error("Backend unavailable");
-        const json = await res.json();
-        const rows = json.data ?? (Array.isArray(json) ? json : []);
-        trainers = rows.map(t => ({ ...t, id: t.trainer_id || t.id, trainer_id: t.trainer_id || t.id }));
-        renderTrainers();
-        updateDashboardStats();
-      } catch { /* keep existing */ }
-    }
-
-    async function fetchPayments() {
-      try {
-        const res = await fetch(PAYMENTS_API);
-        if (!res.ok) throw new Error("Backend unavailable");
-        const json = await res.json();
-        const rows = json.data ?? (Array.isArray(json) ? json : []);
-        payments = rows.map(p => ({
-          ...p,
-          id: p.payment_id || p.id,
-          payment_id: p.payment_id || p.id,
-          memberName: p.memberName || `Member #${p.member_id}`,
-          planName: p.planName || `Plan #${p.plan_id}`,
-        }));
-        renderPayments();
-        updateDashboardStats();
-      } catch { /* keep existing */ }
-    }
-    trainerForm.addEventListener("submit", async e => {
-      e.preventDefault();
-      clearNotice(trainerNotice);
-      clearFormErrors(trainerForm);
-      const fd = new FormData(trainerForm);
-      const payload = {
-        name: fd.get("trainerName")?.toString().trim(),
-        specialization: fd.get("specialization")?.toString().trim() || null,
-        phone: fd.get("trainerPhone")?.toString().trim(),
-        email: fd.get("trainerEmail")?.toString().trim(),
-        experience: parseInt(fd.get("trainerExperience")?.toString().trim() || "0", 10),
-        gym_id: GYM_ID,
-      };
-      let valid = true;
-      if (!validateRequiredField($("trainerName"), "Name")) valid = false;
-      if (!validatePhoneField($("trainerPhone"))) valid = false;
-      if (!validateEmailField($("trainerEmail"), true)) valid = false;
-      if (!valid) { showNotice(trainerNotice, "Please fix the highlighted fields.", "error"); return; }
-      const submitBtn = trainerForm.querySelector('button[type="submit"]');
-      setButtonLoading(submitBtn, true, "Adding...");
-      try {
-        const res = await fetch(TRAINERS_API, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        const d = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(d.message || "Failed to save trainer.");
-        showNotice(trainerNotice, "Trainer added successfully.", "success");
-        trainerForm.reset();
-        await fetchTrainers();
-        showToast("Trainer saved to database.");
-      } catch (err) {
-        showNotice(trainerNotice, `Error: ${err.message}`, "error");
-        showToast(`Could not add trainer: ${err.message}`, "error");
-      } finally {
-        setButtonLoading(submitBtn, false, "Adding...");
-      }
-    });
-
-    function renderTrainers() {
-      trainerList.innerHTML = "";
-      updateDashboardStats();
-      if (trainers.length === 0) { trainerEmptyState.style.display = "block"; return; }
-      trainerEmptyState.style.display = "none";
-      trainers.forEach((t, i) => {
-        const card = document.createElement("article");
-        card.className = "trainer-card";
-        card.innerHTML = `
-            <div class="item-head">
-              <h3>${escapeHtml(t.name)}</h3>
-              <button type="button" class="icon-delete" data-trainer-delete="${i}">Delete</button>
-            </div>
-            <p><strong>Specialization:</strong> ${escapeHtml(t.specialization || "—")}</p>
-            <p><strong>Phone:</strong> ${escapeHtml(String(t.phone || "—"))}</p>
-            <p><strong>Email:</strong> ${escapeHtml(t.email || "—")}</p>
-            <p><strong>Experience:</strong> ${escapeHtml(String(t.experience ?? "—"))} yr(s)</p>`;
-        trainerList.appendChild(card);
-      });
-      document.querySelectorAll("[data-trainer-delete]").forEach(btn => {
-        btn.addEventListener("click", async () => {
-          const i = parseInt(btn.dataset.trainerDelete);
-          if (!confirm("Delete this trainer?")) return;
-          const t = trainers[i];
-          const tid = t.trainer_id || t.id;
-          if (tid) {
-            try {
-              const res = await fetch(`${TRAINERS_API}/${tid}`, { method: "DELETE" });
-              if (!res.ok) { showToast("Failed to delete trainer from database.", "error"); return; }
-            } catch { showToast("Backend unavailable — could not delete.", "error"); return; }
-          }
-          trainers.splice(i, 1);
-          saveArr(TRAINERS_KEY, trainers);
-          renderTrainers();
-          showToast("Trainer deleted.");
-        });
-      });
-    }
-
-    // ─── PAYMENTS ──────────────────────────────────────────────────────────────
-    // DB: payment(payment_id, amount, payment_mode, status, member_id, plan_id, payment_date)
-    paymentForm.addEventListener("submit", async e => {
-      e.preventDefault();
-      clearNotice(paymentNotice);
-      clearFormErrors(paymentForm);
-      const fd = new FormData(paymentForm);
-
-      const memberId = fd.get("paymentMemberId")?.toString().trim();
-      const planId = fd.get("paymentPlanId")?.toString().trim();
-      const amountVal = fd.get("paymentAmount")?.toString().trim();
-      const mode = fd.get("paymentMode")?.toString().trim();
-      const payDate = fd.get("paymentDate")?.toString().trim() || null;
-      const status = fd.get("paymentStatus")?.toString().trim();
-      const amount = parseFloat(amountVal || "0");
-
-      const memberIdSel = $("paymentMemberId");
-      const planIdSel = $("paymentPlanId");
-      const amountInput = $("paymentAmount");
-      const modeSel = $("paymentMode");
-      const statusSel = $("paymentStatus");
-
-      let valid = true;
-      if (!validateRequiredField(memberIdSel, "Member")) valid = false;
-      if (!validateRequiredField(planIdSel, "Plan")) valid = false;
-      if (!validateRequiredField(modeSel, "Payment Mode")) valid = false;
-      if (!validateRequiredField(statusSel, "Status")) valid = false;
-      if (!amountVal) { setFieldError(amountInput, "Amount is required."); valid = false; }
-      else if (isNaN(amount) || amount <= 0) { setFieldError(amountInput, "Amount must be greater than zero."); valid = false; }
-      else clearFieldError(amountInput);
-      if (!valid) { showNotice(paymentNotice, "Please fix the highlighted fields.", "error"); return; }
-
-      // Payload matches actual payment table columns exactly (after migration)
-      const payload = {
-        amount: amount,
-        payment_mode: mode,
-        status: status,
-        member_id: parseInt(memberId, 10),
-        plan_id: parseInt(planId, 10),
-        payment_date: payDate || null,
-      };
-
-      const submitBtn = paymentForm.querySelector('button[type="submit"]');
-      setButtonLoading(submitBtn, true, "Adding...");
-
-      try {
-        const res = await fetch(PAYMENTS_API, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.message || "Failed to save payment."); }
-        showNotice(paymentNotice, "Payment added successfully.", "success");
-        paymentForm.reset();
-        await fetchPayments();
-        showToast("Payment added successfully.");
-        updateDashboardStats();
-      } catch (err) {
-        showNotice(paymentNotice, `Backend unavailable — ${err.message}`, "error");
-        showToast(`Backend unavailable — ${err.message}`, "error");
-      } finally {
-        setButtonLoading(submitBtn, false, "Adding...");
-      }
-    });
-
-    function renderPayments() {
-      paymentHistory.innerHTML = "";
-      updateDashboardStats();
-      if (payments.length === 0) { paymentEmptyState.style.display = "block"; return; }
-      paymentEmptyState.style.display = "none";
-      payments.forEach((p, i) => {
-        const ps = p.status || p.Status || "";
-        const statusClass = ps === "Completed" ? "badge-completed" : ps === "Pending" ? "badge-pending" : "badge-inactive";
-        const item = document.createElement("li");
-        item.className = "payment-item";
-        item.innerHTML = `
-            <div class="item-head">
-              <strong>${escapeHtml(p.memberName || `Member #${p.member_id}`)}</strong>
-              <button type="button" class="icon-delete" data-payment-delete="${i}">Delete</button>
-            </div>
-            <span>₹${parseFloat(p.amount || 0).toFixed(2)} via ${escapeHtml(p.payment_mode || "—")}</span>
-            &nbsp;·&nbsp;<span class="badge ${statusClass}">${escapeHtml(ps || "—")}</span>
-            ${p.planName ? `<br><small style="color:#475569">Plan: ${escapeHtml(p.planName)}</small>` : ""}
-            <br><small style="color:#94a3b8">Date: ${escapeHtml(p.payment_date || "—")}</small>`;
-        paymentHistory.appendChild(item);
-      });
-      document.querySelectorAll("[data-payment-delete]").forEach(btn => {
-        btn.addEventListener("click", async () => {
-          const i = parseInt(btn.dataset.paymentDelete);
-          if (!confirm("Delete this payment?")) return;
-          const p = payments[i];
-          const pid = p.payment_id || p.id;
-          if (!pid) { showToast("Cannot delete — no ID.", "error"); return; }
-          try {
-            const res = await fetch(`${PAYMENTS_API}/${pid}`, { method: "DELETE" });
-            if (!res.ok) { showToast("Failed to delete payment.", "error"); return; }
-          } catch { showToast("Backend unavailable — could not delete.", "error"); return; }
-          await fetchPayments();
-          showToast("Payment deleted.");
-        });
-      });
-    }
-
-    // ─── ENROLLMENT ────────────────────────────────────────────────────────────
-    async function fetchEnrollments() {
-      try {
-        const res = await fetch(ENROLLMENT_API);
-        if (!res.ok) throw new Error("Backend unavailable");
-        const json = await res.json();
-        const rows = json.data ?? (Array.isArray(json) ? json : []);
-        enrollments = rows.map(en => ({
-          ...en,
-          id: en.enrollment_id || en.id,
-          enrollment_id: en.enrollment_id || en.id,
-          memberName: en.memberName || (en.member_id ? `Member #${en.member_id}` : "—"),
-          planName: en.planName || `Plan #${en.plan_id}`,
-        }));
-        renderEnrollments();
-      } catch { /* keep existing */ }
-    }
-
-    enrollmentForm.addEventListener("submit", async e => {
-      e.preventDefault();
-      clearNotice(enrollmentNotice);
-      clearFormErrors(enrollmentForm);
-      const fd = new FormData(enrollmentForm);
-
-      // After migration: enrollment(enrollment_id, member_id, plan_id, start_date, end_date, status)
-      const memberId = fd.get("enrollMemberId")?.toString().trim();
-      const planId = fd.get("enrollPlanId")?.toString().trim();
-      const startDate = fd.get("enrollStartDate")?.toString().trim();
-      const endDate = fd.get("enrollEndDate")?.toString().trim();
-      const status = fd.get("enrollStatus")?.toString().trim();
-
-      let valid = true;
-      if (!validateRequiredField($("enrollMemberId"), "Member")) valid = false;
-      if (!validateRequiredField($("enrollPlanId"), "Plan")) valid = false;
-      if (!validateRequiredField($("enrollStartDate"), "Start Date")) valid = false;
-      if (!validateRequiredField($("enrollEndDate"), "End Date")) valid = false;
-      if (!validateRequiredField($("enrollStatus"), "Status")) valid = false;
-      if (!valid) { showNotice(enrollmentNotice, "Please fix the highlighted fields.", "error"); return; }
-
-      if (new Date(endDate) <= new Date(startDate)) {
-        setFieldError($("enrollEndDate"), "End date must be after start date.");
-        showNotice(enrollmentNotice, "End date must be after start date.", "error");
-        return;
-      }
-
-      const payload = {
-        member_id: parseInt(memberId, 10),
-        plan_id: parseInt(planId, 10),
-        start_date: startDate,
-        end_date: endDate,
-        status: status,
-      };
-
-      const submitBtn = enrollmentForm.querySelector('button[type="submit"]');
-      setButtonLoading(submitBtn, true, "Enrolling...");
-
-      try {
-        const res = await fetch(ENROLLMENT_API, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (!res.ok) { const d = await res.json().catch(() => ({})); throw new Error(d.message || "Failed to save enrollment."); }
-        showNotice(enrollmentNotice, "Member enrolled successfully.", "success");
-        enrollmentForm.reset();
-        await fetchEnrollments();
-        showToast("Member enrolled successfully.");
-      } catch (err) {
-        showNotice(enrollmentNotice, `Backend unavailable — ${err.message}`, "error");
-        showToast(`Backend unavailable — ${err.message}`, "error");
-      } finally {
-        setButtonLoading(submitBtn, false, "Enrolling...");
-      }
-    });
-
-    function renderEnrollments() {
-      enrollmentList.innerHTML = "";
-      if (enrollments.length === 0) { enrollmentEmptyState.style.display = "block"; return; }
-      enrollmentEmptyState.style.display = "none";
-      enrollments.forEach((en, i) => {
-        const s = en.status || en.Status || "";
-        const statusClass = s === "Active" ? "badge-active" : s === "Expired" ? "badge-inactive" : "badge-pending";
-        const card = document.createElement("article");
-        card.className = "enrollment-card";
-        card.innerHTML = `
-            <div class="item-head">
-              <h3>${escapeHtml(en.planName || `Plan #${en.plan_id || en.Plan_ID}`)}</h3>
-              <button type="button" class="icon-delete" data-enroll-delete="${i}">Delete</button>
-            </div>
-            <p><strong>Period:</strong> ${escapeHtml(en.start_date || en.Start_Date)} → ${escapeHtml(en.end_date || en.End_Date)}</p>
-            <p><strong>Status:</strong> <span class="badge ${statusClass}">${escapeHtml(s)}</span></p>`;
-        enrollmentList.appendChild(card);
-      });
-      document.querySelectorAll("[data-enroll-delete]").forEach(btn => {
-        btn.addEventListener("click", async () => {
-          const i = parseInt(btn.dataset.enrollDelete);
-          if (!confirm("Delete this enrollment?")) return;
-          const en = enrollments[i];
-          const eid = en.enrollment_id || en.id;
-          if (!eid) { showToast("Cannot delete — no ID.", "error"); return; }
-          try {
-            const res = await fetch(`${ENROLLMENT_API}/${eid}`, { method: "DELETE" });
-            if (!res.ok) { showToast("Failed to delete enrollment.", "error"); return; }
-          } catch { showToast("Backend unavailable — could not delete.", "error"); return; }
-          await fetchEnrollments();
-          showToast("Enrollment deleted.");
-        });
-      });
-    }
-
-    // ─── INIT ──────────────────────────────────────────────────────────────────
-    function init() {
-      // Show fallback plans immediately so dropdowns aren't empty
-      plans = [...FALLBACK_PLANS];
-      renderPlans();
-      populatePlanDropdowns();
-      updateDashboardStats();
-
-      if (isAuthenticated()) {
-        showApp();
-        // All data comes from the database — no localStorage pre-seeding
-        fetchMembers();
-        fetchTrainers();
-        fetchPayments();
-        fetchEnrollments();
-        fetchPlans();
-      } else {
-        showLogin();
-      }
-    }
-
-    init();
+    })();
   </script>
-</body>
 
+</body>
 </html>
