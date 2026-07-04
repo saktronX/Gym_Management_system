@@ -469,152 +469,537 @@
 
 
         <!-- ══════════════════════════════════════════════════════════════
-             MEMBERS TAB  (placeholder — Phase 3 will fill this in)
+             MEMBERS TAB
         ═══════════════════════════════════════════════════════════════ -->
         <section data-tab-content="members">
 
+          <!-- Page Header -->
           <div class="page-header">
             <div>
               <div class="page-title">Members</div>
               <div class="page-sub">Register and manage all gym members.</div>
             </div>
-            <button type="button" class="btn btn-primary" id="fetchMembersBtn">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
-                <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/>
-              </svg>
-              Fetch Members
-            </button>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <button type="button" class="btn btn-secondary" id="fetchMembersBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
+                  <polyline points="1 4 1 10 7 10"/>
+                  <path d="M3.51 15a9 9 0 1 0 .49-4.95"/>
+                </svg>
+                Refresh
+              </button>
+              <button type="button" class="btn btn-primary" id="openMemberFormBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Add Member
+              </button>
+            </div>
           </div>
 
-          <!-- Notices / loader / list — IDs required by JS -->
-          <div id="formNotice" class="notice" role="alert"></div>
+          <!-- Notices (outside card so they're always visible) -->
+          <div id="formNotice"   class="notice" role="alert"></div>
           <div id="membersNotice" class="notice" role="alert"></div>
 
-          <div id="membersLoader" style="display:none;align-items:center;gap:10px;padding:20px 0;color:var(--muted);font-size:13px">
-            <div class="loader"></div>
-            <span>Fetching members…</span>
+          <!-- Members Directory Card -->
+          <div class="section-card">
+
+            <!-- Card Header: search -->
+            <div class="section-head">
+              <h3>Members Directory</h3>
+              <div style="position:relative;width:260px">
+                <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--light);pointer-events:none"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="13" height="13">
+                  <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                <input
+                  type="search"
+                  id="memberSearchLocal"
+                  placeholder="Filter by name…"
+                  aria-label="Filter members"
+                  style="width:100%;padding:7px 10px 7px 30px;border:1px solid var(--border);border-radius:var(--rb);font-size:12px;background:var(--bg);color:var(--txt);outline:none"
+                  oninput="document.getElementById('memberSearch').value=this.value;document.getElementById('memberSearch').dispatchEvent(new Event('input'))"
+                />
+              </div>
+            </div>
+
+            <!-- Loader -->
+            <div id="membersLoader" style="display:none;align-items:center;gap:10px;padding:32px;color:var(--muted);font-size:13px">
+              <div class="loader"></div>
+              <span>Fetching members from database…</span>
+            </div>
+
+            <!-- Members Grid -->
+            <div id="membersList"></div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="empty" style="padding:48px 20px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:40px;height:40px;color:var(--light);margin:0 auto 12px;display:block">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                <circle cx="9" cy="7" r="4"/>
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+              </svg>
+              <div style="font-size:14px;font-weight:600;color:var(--txt);margin-bottom:4px">No members found</div>
+              <div style="font-size:12px">Click <strong>Refresh</strong> to load from the database, or <strong>Add Member</strong> to register a new one.</div>
+            </div>
+
           </div>
-
-          <div id="membersList"></div>
-          <p id="emptyState" class="empty">No members loaded yet. Click <strong>Fetch Members</strong> to load.</p>
-
-          <!-- memberForm — hidden until Phase 3 modal is built -->
-          <form id="memberForm" style="display:none">
-            <input type="text"   id="name"    name="name"    />
-            <select              id="gender"  name="gender"  ><option value="">Select</option><option value="Male">Male</option><option value="Female">Female</option></select>
-            <input type="tel"    id="phone"   name="phone"   />
-            <input type="email"  id="email"   name="email"   />
-            <input type="date"   id="dob"     name="dob"     />
-            <input type="text"   id="address" name="address" />
-            <button type="submit">Submit</button>
-          </form>
+          <!-- /.section-card -->
 
         </section>
         <!-- /members -->
 
 
+        <!-- ── Add Member Modal ──────────────────────────────────────── -->
+        <div id="memberFormModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="memberFormTitle">
+          <div class="modal-panel">
+
+            <div class="modal-header">
+              <h2 id="memberFormTitle">Add New Member</h2>
+              <button type="button" class="modal-close" id="closeMemberFormBtn" aria-label="Close modal">✕</button>
+            </div>
+
+            <div class="modal-body">
+              <form id="memberForm" novalidate>
+
+                <div class="grid">
+                  <div class="field">
+                    <label for="name">Full Name <span style="color:var(--d)">*</span></label>
+                    <input type="text" id="name" name="name" placeholder="e.g. Riya Sharma" required />
+                    <p class="error-text" style="display:none"></p>
+                  </div>
+                  <div class="field">
+                    <label for="gender">Gender <span style="color:var(--d)">*</span></label>
+                    <select id="gender" name="gender" required>
+                      <option value="">Select Gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="phone">Phone <span style="color:var(--d)">*</span></label>
+                    <input type="tel" id="phone" name="phone" placeholder="10-digit number" required />
+                  </div>
+                  <div class="field">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" placeholder="Optional" />
+                  </div>
+                  <div class="field">
+                    <label for="dob">Date of Birth <span style="color:var(--d)">*</span></label>
+                    <input type="date" id="dob" name="dob" required />
+                  </div>
+                  <div class="field">
+                    <label for="address">Address <span style="color:var(--d)">*</span></label>
+                    <input type="text" id="address" name="address" placeholder="Street, City" required />
+                  </div>
+                </div>
+
+              </form>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" id="cancelMemberFormBtn">Cancel</button>
+              <button type="submit" form="memberForm" class="btn btn-primary" id="submitMemberFormBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                  <polyline points="17 21 17 13 7 13 7 21"/>
+                  <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                Save Member
+              </button>
+            </div>
+
+          </div>
+        </div>
+        <!-- /#memberFormModal -->
+
+
         <!-- ══════════════════════════════════════════════════════════════
-             TRAINERS TAB  (placeholder — Phase 4 will fill this in)
+             TRAINERS TAB
         ═══════════════════════════════════════════════════════════════ -->
         <section data-tab-content="trainers">
 
+          <!-- Page Header -->
           <div class="page-header">
             <div>
               <div class="page-title">Trainers</div>
-              <div class="page-sub">Add and manage your gym's trainer roster.</div>
+              <div class="page-sub">Manage your gym's expert trainer roster.</div>
             </div>
+            <button type="button" class="btn btn-primary" id="openTrainerFormBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
+                <line x1="12" y1="5" x2="12" y2="19"/>
+                <line x1="5" y1="12" x2="19" y2="12"/>
+              </svg>
+              Add Trainer
+            </button>
           </div>
 
-          <!-- IDs required by JS -->
+          <!-- Notice -->
           <div id="trainerNotice" class="notice" role="alert"></div>
-          <div id="trainerList" class="trainer-grid"></div>
-          <p id="trainerEmptyState" class="empty">No trainers added yet.</p>
 
-          <!-- trainerForm — hidden stub -->
-          <form id="trainerForm" style="display:none">
-            <input type="text"  id="trainerName"       name="trainerName"       />
-            <input type="text"  id="specialization"    name="specialization"    />
-            <input type="tel"   id="trainerPhone"      name="trainerPhone"      />
-            <input type="email" id="trainerEmail"      name="trainerEmail"      />
-            <input type="number" id="trainerExperience" name="trainerExperience" />
-            <button type="submit">Submit</button>
-          </form>
+          <!-- Trainers Directory Card -->
+          <div class="section-card">
+
+            <div class="section-head">
+              <h3>Trainer Roster</h3>
+              <span style="font-size:11px;color:var(--muted);font-weight:500" id="trainerCountBadge">Loading…</span>
+            </div>
+
+            <!-- Trainer Grid (populated by JS renderTrainers) -->
+            <div id="trainerList" class="trainer-grid"></div>
+
+            <!-- Empty State -->
+            <div id="trainerEmptyState" class="empty" style="padding:48px 20px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                   style="width:40px;height:40px;color:var(--light);margin:0 auto 12px;display:block">
+                <path d="M18 8h1a4 4 0 0 1 0 8h-1"/>
+                <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+                <line x1="6"  y1="1" x2="6"  y2="4"/>
+                <line x1="10" y1="1" x2="10" y2="4"/>
+                <line x1="14" y1="1" x2="14" y2="4"/>
+              </svg>
+              <div style="font-size:14px;font-weight:600;color:var(--txt);margin-bottom:4px">No trainers yet</div>
+              <div style="font-size:12px">Click <strong>Add Trainer</strong> to onboard your first trainer.</div>
+            </div>
+
+          </div>
+          <!-- /.section-card -->
 
         </section>
         <!-- /trainers -->
 
 
+        <!-- ── Add Trainer Modal ──────────────────────────────────────── -->
+        <div id="trainerFormModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="trainerFormTitle">
+          <div class="modal-panel">
+
+            <div class="modal-header">
+              <h2 id="trainerFormTitle">Add New Trainer</h2>
+              <button type="button" class="modal-close" id="closeTrainerFormBtn" aria-label="Close modal">✕</button>
+            </div>
+
+            <div class="modal-body">
+              <form id="trainerForm" novalidate>
+
+                <div class="grid">
+                  <div class="field">
+                    <label for="trainerName">Full Name <span style="color:var(--d)">*</span></label>
+                    <input type="text" id="trainerName" name="trainerName" placeholder="e.g. Arjun Mehta" required />
+                  </div>
+                  <div class="field">
+                    <label for="specialization">Specialization</label>
+                    <input type="text" id="specialization" name="specialization" placeholder="e.g. Strength & Conditioning" />
+                  </div>
+                  <div class="field">
+                    <label for="trainerPhone">Phone <span style="color:var(--d)">*</span></label>
+                    <input type="tel" id="trainerPhone" name="trainerPhone" placeholder="10-digit number" required />
+                  </div>
+                  <div class="field">
+                    <label for="trainerEmail">Email <span style="color:var(--d)">*</span></label>
+                    <input type="email" id="trainerEmail" name="trainerEmail" placeholder="trainer@example.com" required />
+                  </div>
+                  <div class="field" style="grid-column:1/-1">
+                    <label for="trainerExperience">Experience (years)</label>
+                    <input type="number" id="trainerExperience" name="trainerExperience" min="0" max="50" placeholder="e.g. 5" />
+                  </div>
+                </div>
+
+              </form>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" id="cancelTrainerFormBtn">Cancel</button>
+              <button type="submit" form="trainerForm" class="btn btn-primary" id="submitTrainerFormBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                  <polyline points="17 21 17 13 7 13 7 21"/>
+                  <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                Save Trainer
+              </button>
+            </div>
+
+          </div>
+        </div>
+        <!-- /#trainerFormModal -->
+
+
+
         <!-- ══════════════════════════════════════════════════════════════
-             PAYMENTS TAB  (placeholder — Phase 5 will fill this in)
+             PAYMENTS TAB
         ═══════════════════════════════════════════════════════════════ -->
         <section data-tab-content="payments">
 
+          <!-- Page Header -->
           <div class="page-header">
             <div>
               <div class="page-title">Payments</div>
               <div class="page-sub">Record and review all payment transactions.</div>
             </div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <button type="button" class="btn btn-secondary" id="fetchPaymentsBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
+                  <polyline points="1 4 1 10 7 10"/>
+                  <path d="M3.51 15a9 9 0 1 0 .49-4.95"/>
+                </svg>
+                Refresh
+              </button>
+              <button type="button" class="btn btn-primary" id="openPaymentFormBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Record Payment
+              </button>
+            </div>
           </div>
 
-          <!-- IDs required by JS -->
+          <!-- Notice -->
           <div id="paymentNotice" class="notice" role="alert"></div>
-          <ul id="paymentHistory" style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:10px"></ul>
-          <p id="paymentEmptyState" class="empty">No payments recorded yet.</p>
 
-          <!-- paymentForm — hidden stub -->
-          <form id="paymentForm" style="display:none">
-            <select id="paymentMemberId" name="paymentMemberId"><option value="">Select Member</option></select>
-            <select id="paymentPlanId"   name="paymentPlanId"  ><option value="">Select Plan</option></select>
-            <input  type="number" id="paymentAmount" name="paymentAmount" />
-            <select id="paymentMode"   name="paymentMode"  >
-              <option value="">Select Mode</option>
-              <option value="Cash">Cash</option><option value="Card">Card</option>
-              <option value="UPI">UPI</option><option value="Net Banking">Net Banking</option>
-            </select>
-            <input  type="date" id="paymentDate"   name="paymentDate"   />
-            <select id="paymentStatus" name="paymentStatus">
-              <option value="">Select Status</option>
-              <option value="Pending">Pending</option><option value="Completed">Completed</option><option value="Failed">Failed</option>
-            </select>
-            <button type="submit">Submit</button>
-          </form>
+          <!-- Payments Card -->
+          <div class="section-card">
+
+            <div class="section-head">
+              <h3>Transaction History</h3>
+              <span style="font-size:11px;color:var(--muted);font-weight:500" id="paymentCountBadge">Loading…</span>
+            </div>
+
+            <!-- Loader -->
+            <div id="paymentsLoader" style="display:none;align-items:center;gap:10px;padding:32px;color:var(--muted);font-size:13px">
+              <div class="loader"></div>
+              <span>Fetching payment records…</span>
+            </div>
+
+            <!-- Payment List — JS renders <li> items into this <ul> -->
+            <ul id="paymentHistory" style="list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:0"></ul>
+
+            <!-- Empty State -->
+            <div id="paymentEmptyState" class="empty" style="padding:48px 20px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                   style="width:40px;height:40px;color:var(--light);margin:0 auto 12px;display:block">
+                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                <line x1="1" y1="10" x2="23" y2="10"/>
+              </svg>
+              <div style="font-size:14px;font-weight:600;color:var(--txt);margin-bottom:4px">No payments yet</div>
+              <div style="font-size:12px">Click <strong>Record Payment</strong> to log your first transaction.</div>
+            </div>
+
+          </div>
+          <!-- /.section-card -->
 
         </section>
         <!-- /payments -->
 
 
+        <!-- ── Record Payment Modal ───────────────────────────────────── -->
+        <div id="paymentFormModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="paymentFormTitle">
+          <div class="modal-panel">
+
+            <div class="modal-header">
+              <h2 id="paymentFormTitle">Record Payment</h2>
+              <button type="button" class="modal-close" id="closePaymentFormBtn" aria-label="Close modal">✕</button>
+            </div>
+
+            <div class="modal-body">
+              <form id="paymentForm" novalidate>
+
+                <div class="grid">
+                  <div class="field">
+                    <label for="paymentMemberId">Member <span style="color:var(--d)">*</span></label>
+                    <select id="paymentMemberId" name="paymentMemberId" required>
+                      <option value="">Select Member</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="paymentPlanId">Plan <span style="color:var(--d)">*</span></label>
+                    <select id="paymentPlanId" name="paymentPlanId" required>
+                      <option value="">Select Plan</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="paymentAmount">Amount (₹) <span style="color:var(--d)">*</span></label>
+                    <input type="number" id="paymentAmount" name="paymentAmount" min="0" step="0.01" placeholder="e.g. 2999" required />
+                  </div>
+                  <div class="field">
+                    <label for="paymentMode">Payment Mode <span style="color:var(--d)">*</span></label>
+                    <select id="paymentMode" name="paymentMode" required>
+                      <option value="">Select Mode</option>
+                      <option value="Cash">Cash</option>
+                      <option value="Card">Card</option>
+                      <option value="UPI">UPI</option>
+                      <option value="Net Banking">Net Banking</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="paymentDate">Payment Date <span style="color:var(--d)">*</span></label>
+                    <input type="date" id="paymentDate" name="paymentDate" required />
+                  </div>
+                  <div class="field">
+                    <label for="paymentStatus">Status <span style="color:var(--d)">*</span></label>
+                    <select id="paymentStatus" name="paymentStatus" required>
+                      <option value="">Select Status</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Completed">Completed</option>
+                      <option value="Failed">Failed</option>
+                    </select>
+                  </div>
+                </div>
+
+              </form>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" id="cancelPaymentFormBtn">Cancel</button>
+              <button type="submit" form="paymentForm" class="btn btn-primary" id="submitPaymentFormBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                  <polyline points="17 21 17 13 7 13 7 21"/>
+                  <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                Save Payment
+              </button>
+            </div>
+
+          </div>
+        </div>
+        <!-- /#paymentFormModal -->
+
+
         <!-- ══════════════════════════════════════════════════════════════
-             ENROLLMENT TAB  (placeholder — Phase 6 will fill this in)
+             ENROLLMENT TAB
         ═══════════════════════════════════════════════════════════════ -->
         <section data-tab-content="enrollment">
 
+          <!-- Page Header -->
           <div class="page-header">
             <div>
               <div class="page-title">Enrollment</div>
-              <div class="page-sub">Enroll members into membership plans.</div>
+              <div class="page-sub">Assign members to membership plans and track active subscriptions.</div>
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+              <button type="button" class="btn btn-secondary" id="fetchEnrollmentsBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
+                  <polyline points="1 4 1 10 7 10"/>
+                  <path d="M3.51 15a9 9 0 1 0 .49-4.95"/>
+                </svg>
+                Refresh
+              </button>
+              <button type="button" class="btn btn-primary" id="openEnrollmentFormBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                New Enrollment
+              </button>
             </div>
           </div>
 
-          <!-- IDs required by JS -->
+          <!-- Notice -->
           <div id="enrollmentNotice" class="notice" role="alert"></div>
-          <div id="enrollmentList" class="enrollment-grid"></div>
-          <p id="enrollmentEmptyState" class="empty">No enrollments recorded yet.</p>
 
-          <!-- enrollmentForm — hidden stub -->
-          <form id="enrollmentForm" style="display:none">
-            <select id="enrollMemberId"  name="enrollMemberId" ><option value="">Select Member</option></select>
-            <select id="enrollPlanId"    name="enrollPlanId"   ><option value="">Select Plan</option></select>
-            <input  type="date" id="enrollStartDate" name="enrollStartDate" />
-            <input  type="date" id="enrollEndDate"   name="enrollEndDate"   />
-            <select id="enrollStatus" name="enrollStatus">
-              <option value="">Select Status</option>
-              <option value="Active">Active</option><option value="Inactive">Inactive</option><option value="Expired">Expired</option>
-            </select>
-            <button type="submit">Submit</button>
-          </form>
+          <!-- Enrollment Card -->
+          <div class="section-card">
+
+            <div class="section-head">
+              <h3>Active Subscriptions</h3>
+              <span style="font-size:11px;color:var(--muted);font-weight:500" id="enrollmentCountBadge">Loading…</span>
+            </div>
+
+            <!-- Loader -->
+            <div id="enrollmentsLoader" style="display:none;align-items:center;gap:10px;padding:32px;color:var(--muted);font-size:13px">
+              <div class="loader"></div>
+              <span>Fetching enrollment records…</span>
+            </div>
+
+            <!-- Enrollment Grid — JS renders cards into this div -->
+            <div id="enrollmentList" class="enrollment-grid"></div>
+
+            <!-- Empty State -->
+            <div id="enrollmentEmptyState" class="empty" style="padding:48px 20px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"
+                   style="width:40px;height:40px;color:var(--light);margin:0 auto 12px;display:block">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+                <polyline points="10 9 9 9 8 9"/>
+              </svg>
+              <div style="font-size:14px;font-weight:600;color:var(--txt);margin-bottom:4px">No enrollments yet</div>
+              <div style="font-size:12px">Click <strong>New Enrollment</strong> to assign a member to a plan.</div>
+            </div>
+
+          </div>
+          <!-- /.section-card -->
 
         </section>
         <!-- /enrollment -->
+
+
+        <!-- ── New Enrollment Modal ───────────────────────────────────── -->
+        <div id="enrollmentFormModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="enrollmentFormTitle">
+          <div class="modal-panel">
+
+            <div class="modal-header">
+              <h2 id="enrollmentFormTitle">New Enrollment</h2>
+              <button type="button" class="modal-close" id="closeEnrollmentFormBtn" aria-label="Close modal">✕</button>
+            </div>
+
+            <div class="modal-body">
+              <form id="enrollmentForm" novalidate>
+
+                <div class="grid">
+                  <div class="field">
+                    <label for="enrollMemberId">Member <span style="color:var(--d)">*</span></label>
+                    <select id="enrollMemberId" name="enrollMemberId" required>
+                      <option value="">Select Member</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="enrollPlanId">Membership Plan <span style="color:var(--d)">*</span></label>
+                    <select id="enrollPlanId" name="enrollPlanId" required>
+                      <option value="">Select Plan</option>
+                    </select>
+                  </div>
+                  <div class="field">
+                    <label for="enrollStartDate">Start Date <span style="color:var(--d)">*</span></label>
+                    <input type="date" id="enrollStartDate" name="enrollStartDate" required />
+                  </div>
+                  <div class="field">
+                    <label for="enrollEndDate">End Date <span style="color:var(--d)">*</span></label>
+                    <input type="date" id="enrollEndDate" name="enrollEndDate" required />
+                  </div>
+                  <div class="field" style="grid-column:1/-1">
+                    <label for="enrollStatus">Status <span style="color:var(--d)">*</span></label>
+                    <select id="enrollStatus" name="enrollStatus" required>
+                      <option value="">Select Status</option>
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                      <option value="Expired">Expired</option>
+                    </select>
+                  </div>
+                </div>
+
+              </form>
+            </div>
+
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" id="cancelEnrollmentFormBtn">Cancel</button>
+              <button type="submit" form="enrollmentForm" class="btn btn-primary" id="submitEnrollmentFormBtn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px">
+                  <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                  <polyline points="17 21 17 13 7 13 7 21"/>
+                  <polyline points="7 3 7 8 15 8"/>
+                </svg>
+                Save Enrollment
+              </button>
+            </div>
+
+          </div>
+        </div>
+        <!-- /#enrollmentFormModal -->
 
 
       </main>
@@ -628,25 +1013,28 @@
 
 
   <!-- ═══════════════════════════════════════════════════════════════════════
-       EDIT MEMBER MODAL  (ID required by JS — Phase 7 will fully style this)
+       EDIT MEMBER MODAL
   ════════════════════════════════════════════════════════════════════════ -->
-  <div id="editMemberModal" class="modal-overlay" role="dialog" aria-modal="true">
+  <div id="editMemberModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="editMemberTitle">
     <div class="modal-panel">
+
       <div class="modal-header">
-        <h2>Edit Member</h2>
-        <button type="button" class="modal-close" aria-label="Close" id="cancelEditBtn">✕</button>
+        <h2 id="editMemberTitle">Edit Member</h2>
+        <button type="button" class="modal-close" id="cancelEditBtn" aria-label="Close modal">✕</button>
       </div>
+
       <div class="modal-body">
-        <form id="editMemberForm">
+        <form id="editMemberForm" novalidate>
           <input type="hidden" id="editMemberIndex" />
+
           <div class="grid">
             <div class="field">
-              <label for="editName">Name</label>
-              <input type="text" id="editName" required />
+              <label for="editName">Full Name <span style="color:var(--d)">*</span></label>
+              <input type="text" id="editName" name="editName" placeholder="e.g. Riya Sharma" required />
             </div>
             <div class="field">
-              <label for="editGender">Gender</label>
-              <select id="editGender" required>
+              <label for="editGender">Gender <span style="color:var(--d)">*</span></label>
+              <select id="editGender" name="editGender" required>
                 <option value="">Select Gender</option>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
@@ -654,22 +1042,41 @@
               </select>
             </div>
             <div class="field">
-              <label for="editPhone">Phone</label>
-              <input type="tel" id="editPhone" required />
+              <label for="editPhone">Phone <span style="color:var(--d)">*</span></label>
+              <input type="tel" id="editPhone" name="editPhone" placeholder="10-digit number" required />
             </div>
             <div class="field">
               <label for="editEmail">Email</label>
-              <input type="email" id="editEmail" />
+              <input type="email" id="editEmail" name="editEmail" placeholder="Optional" />
+            </div>
+            <div class="field">
+              <label for="editDob">Date of Birth</label>
+              <input type="date" id="editDob" name="editDob" />
+            </div>
+            <div class="field">
+              <label for="editAddress">Address</label>
+              <input type="text" id="editAddress" name="editAddress" placeholder="Street, City" />
             </div>
           </div>
+
         </form>
       </div>
+
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" onclick="document.getElementById('cancelEditBtn').click()">Cancel</button>
-        <button type="submit" form="editMemberForm" class="btn btn-primary" id="saveEditBtn">Save Changes</button>
+        <button type="button" class="btn btn-secondary" id="cancelEditMemberBtn">Cancel</button>
+        <button type="submit" form="editMemberForm" class="btn btn-primary" id="saveEditBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+            <polyline points="17 21 17 13 7 13 7 21"/>
+            <polyline points="7 3 7 8 15 8"/>
+          </svg>
+          Save Changes
+        </button>
       </div>
+
     </div>
   </div>
+  <!-- /#editMemberModal -->
 
 
   <!-- ─── External Scripts ──────────────────────────────────────────────── -->

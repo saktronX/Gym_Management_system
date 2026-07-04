@@ -999,4 +999,259 @@
           </div>`;
       }).join('');
     }
-  
+
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // PHASE 3 — MEMBER FORM MODAL
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    (function initMemberFormModal() {
+      const modal         = document.getElementById('memberFormModal');
+      const openBtn       = document.getElementById('openMemberFormBtn');
+      const closeBtn      = document.getElementById('closeMemberFormBtn');
+      const cancelBtn     = document.getElementById('cancelMemberFormBtn');
+
+      if (!modal) return; // guard: modal not in DOM yet
+
+      function openMemberModal() {
+        modal.classList.add('active');
+        // Focus first input after transition
+        setTimeout(() => document.getElementById('name')?.focus(), 80);
+      }
+      function closeMemberModal() {
+        modal.classList.remove('active');
+        // Clear the inline form notice too
+        clearNotice(formNotice);
+      }
+
+      if (openBtn)   openBtn.addEventListener('click', openMemberModal);
+      if (closeBtn)  closeBtn.addEventListener('click', closeMemberModal);
+      if (cancelBtn) cancelBtn.addEventListener('click', closeMemberModal);
+
+      // Close on backdrop click
+      modal.addEventListener('click', e => { if (e.target === modal) closeMemberModal(); });
+
+      // Close modal automatically after a successful member add
+      // Patch: wrap the existing memberForm submit to also close modal on success
+      const origMemberForm = memberForm;
+      if (origMemberForm) {
+        origMemberForm.addEventListener('submit', () => {
+          // The real submit handler fires first (gym.js line ~385).
+          // After it resolves we check formNotice for success class.
+          setTimeout(() => {
+            if (formNotice.classList.contains('success')) {
+              closeMemberModal();
+              // Mirror topbar search clear into local search box
+              const local = document.getElementById('memberSearchLocal');
+              if (local) local.value = '';
+            }
+          }, 600);
+        });
+      }
+    })();
+
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // PHASE 8 — MODAL WIRING + COUNT BADGES + REFRESH BUTTONS
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    // ── Trainer Form Modal ────────────────────────────────────────────────────
+    (function initTrainerFormModal() {
+      const modal     = document.getElementById('trainerFormModal');
+      const openBtn   = document.getElementById('openTrainerFormBtn');
+      const closeBtn  = document.getElementById('closeTrainerFormBtn');
+      const cancelBtn = document.getElementById('cancelTrainerFormBtn');
+
+      if (!modal) return;
+
+      function openTrainerModal() {
+        modal.classList.add('active');
+        setTimeout(() => document.getElementById('trainerName')?.focus(), 80);
+      }
+      function closeTrainerModal() {
+        modal.classList.remove('active');
+        clearNotice(trainerNotice);
+      }
+
+      if (openBtn)   openBtn.addEventListener('click', openTrainerModal);
+      if (closeBtn)  closeBtn.addEventListener('click', closeTrainerModal);
+      if (cancelBtn) cancelBtn.addEventListener('click', closeTrainerModal);
+      modal.addEventListener('click', e => { if (e.target === modal) closeTrainerModal(); });
+
+      // Auto-close after successful trainer add
+      trainerForm.addEventListener('submit', () => {
+        setTimeout(() => {
+          if (trainerNotice.classList.contains('success')) closeTrainerModal();
+        }, 600);
+      });
+    })();
+
+
+    // ── Payment Form Modal ────────────────────────────────────────────────────
+    (function initPaymentFormModal() {
+      const modal     = document.getElementById('paymentFormModal');
+      const openBtn   = document.getElementById('openPaymentFormBtn');
+      const closeBtn  = document.getElementById('closePaymentFormBtn');
+      const cancelBtn = document.getElementById('cancelPaymentFormBtn');
+
+      if (!modal) return;
+
+      function openPaymentModal() {
+        modal.classList.add('active');
+        // Pre-select today's date if blank
+        const dateInput = document.getElementById('paymentDate');
+        if (dateInput && !dateInput.value) {
+          dateInput.value = new Date().toISOString().split('T')[0];
+        }
+        setTimeout(() => document.getElementById('paymentMemberId')?.focus(), 80);
+      }
+      function closePaymentModal() {
+        modal.classList.remove('active');
+        clearNotice(paymentNotice);
+      }
+
+      if (openBtn)   openBtn.addEventListener('click', openPaymentModal);
+      if (closeBtn)  closeBtn.addEventListener('click', closePaymentModal);
+      if (cancelBtn) cancelBtn.addEventListener('click', closePaymentModal);
+      modal.addEventListener('click', e => { if (e.target === modal) closePaymentModal(); });
+
+      // Auto-close after successful payment add
+      paymentForm.addEventListener('submit', () => {
+        setTimeout(() => {
+          if (paymentNotice.classList.contains('success')) closePaymentModal();
+        }, 600);
+      });
+    })();
+
+
+    // ── Enrollment Form Modal ─────────────────────────────────────────────────
+    (function initEnrollmentFormModal() {
+      const modal     = document.getElementById('enrollmentFormModal');
+      const openBtn   = document.getElementById('openEnrollmentFormBtn');
+      const closeBtn  = document.getElementById('closeEnrollmentFormBtn');
+      const cancelBtn = document.getElementById('cancelEnrollmentFormBtn');
+
+      if (!modal) return;
+
+      function openEnrollmentModal() {
+        modal.classList.add('active');
+        // Pre-fill start date to today if blank
+        const startEl = document.getElementById('enrollStartDate');
+        if (startEl && !startEl.value) {
+          startEl.value = new Date().toISOString().split('T')[0];
+        }
+        setTimeout(() => document.getElementById('enrollMemberId')?.focus(), 80);
+      }
+      function closeEnrollmentModal() {
+        modal.classList.remove('active');
+        clearNotice(enrollmentNotice);
+      }
+
+      if (openBtn)   openBtn.addEventListener('click', openEnrollmentModal);
+      if (closeBtn)  closeBtn.addEventListener('click', closeEnrollmentModal);
+      if (cancelBtn) cancelBtn.addEventListener('click', closeEnrollmentModal);
+      modal.addEventListener('click', e => { if (e.target === modal) closeEnrollmentModal(); });
+
+      // Auto-close after successful enrollment
+      enrollmentForm.addEventListener('submit', () => {
+        setTimeout(() => {
+          if (enrollmentNotice.classList.contains('success')) closeEnrollmentModal();
+        }, 600);
+      });
+    })();
+
+
+    // ── Edit Member Modal — extra wiring (cancelEditMemberBtn added in Phase 7) ─
+    (function patchEditMemberModal() {
+      const cancelExtra = document.getElementById('cancelEditMemberBtn');
+      // cancelEditBtn (✕ button) already wired at line 495; wire the footer Cancel too
+      if (cancelExtra) cancelExtra.addEventListener('click', closeEditModal);
+
+      // Also populate the new editDob / editAddress fields when opening edit modal
+      const origOpenEditModal = openEditModal;
+      // Monkey-patch openEditModal to also fill new fields
+      window._openEditModal = function(idx) {
+        origOpenEditModal(idx);
+        const m = allMembers[idx];
+        if (!m) return;
+        const dobEl  = document.getElementById('editDob');
+        const addrEl = document.getElementById('editAddress');
+        if (dobEl)  dobEl.value  = m.date_of_birth || m.dob || '';
+        if (addrEl) addrEl.value = m.address || '';
+      };
+
+      // Re-bind edit buttons to use patched version
+      document.addEventListener('click', e => {
+        const btn = e.target.closest('[data-member-edit]');
+        if (btn) window._openEditModal(parseInt(btn.dataset.memberEdit));
+      });
+
+      // Also persist dob + address in edit submit
+      editMemberForm.addEventListener('submit', () => {
+        const idx = parseInt(editMemberIndex.value || '-1');
+        if (idx < 0 || !allMembers[idx]) return;
+        const dobEl  = document.getElementById('editDob');
+        const addrEl = document.getElementById('editAddress');
+        if (dobEl)  allMembers[idx].date_of_birth = dobEl.value;
+        if (addrEl) allMembers[idx].address = addrEl.value;
+      });
+    })();
+
+
+    // ── Count Badges ──────────────────────────────────────────────────────────
+    // Use var (no TDZ) + function expression (not declaration, so no hoisting)
+    // so the original updateDashboardStats is captured before the wrapper runs.
+    var _origUpdateDashboardStats = updateDashboardStats;
+    updateDashboardStats = function () {
+      _origUpdateDashboardStats();
+
+      var trainerBadge    = document.getElementById('trainerCountBadge');
+      var paymentBadge    = document.getElementById('paymentCountBadge');
+      var enrollmentBadge = document.getElementById('enrollmentCountBadge');
+
+      if (trainerBadge)    trainerBadge.textContent    = trainers.length    + ' trainer'    + (trainers.length    !== 1 ? 's' : '');
+      if (paymentBadge)    paymentBadge.textContent    = payments.length    + ' record'     + (payments.length    !== 1 ? 's' : '');
+      if (enrollmentBadge) enrollmentBadge.textContent = enrollments.length + ' enrollment' + (enrollments.length !== 1 ? 's' : '');
+    };
+
+    // Trigger once on load so badges show correct values immediately
+    updateDashboardStats();
+
+
+    // ── Refresh Buttons (Payments + Enrollments) ───────────────────────────────
+    const fetchPaymentsBtn    = document.getElementById('fetchPaymentsBtn');
+    const fetchEnrollmentsBtn = document.getElementById('fetchEnrollmentsBtn');
+
+    if (fetchPaymentsBtn) {
+      fetchPaymentsBtn.addEventListener('click', async () => {
+        fetchPaymentsBtn.disabled = true;
+        fetchPaymentsBtn.textContent = 'Fetching…';
+        const loader = document.getElementById('paymentsLoader');
+        if (loader) loader.style.display = 'flex';
+        await fetchPayments();
+        if (loader) loader.style.display = 'none';
+        fetchPaymentsBtn.disabled = false;
+        fetchPaymentsBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg> Refresh`;
+      });
+    }
+
+    if (fetchEnrollmentsBtn) {
+      fetchEnrollmentsBtn.addEventListener('click', async () => {
+        fetchEnrollmentsBtn.disabled = true;
+        fetchEnrollmentsBtn.textContent = 'Fetching…';
+        const loader = document.getElementById('enrollmentsLoader');
+        if (loader) loader.style.display = 'flex';
+        await fetchEnrollments();
+        if (loader) loader.style.display = 'none';
+        fetchEnrollmentsBtn.disabled = false;
+        fetchEnrollmentsBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg> Refresh`;
+      });
+    }
+
+
+    // ── Global Escape Key — close any open modal ──────────────────────────────
+    document.addEventListener('keydown', e => {
+      if (e.key !== 'Escape') return;
+      const modals = document.querySelectorAll('.modal-overlay.active, .modal-overlay.show');
+      modals.forEach(m => m.classList.remove('active', 'show'));
+    });
