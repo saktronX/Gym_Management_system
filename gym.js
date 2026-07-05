@@ -423,8 +423,8 @@
     }
 
     function populatePlanDropdowns() {
-      // Populate both enrollment plan dropdown and payment plan dropdown
-      [$("enrollPlanId"), $("paymentPlanId")].forEach(sel => {
+      // Populate enrollment, payment, and member-registration plan dropdowns
+      [$("enrollPlanId"), $("paymentPlanId"), $("memberPlanId")].forEach(sel => {
         if (!sel) return;
         const prev = sel.value;
         sel.innerHTML = '<option value="">Select Plan</option>';
@@ -436,6 +436,20 @@
         });
         if (prev) sel.value = prev;
       });
+    }
+
+    /** Auto-fill registration amount when a plan is selected (amount remains editable). */
+    function fillMemberAmountFromPlan() {
+      const sel = $("memberPlanId");
+      const amountInput = $("memberAmount");
+      if (!sel || !amountInput) return;
+      const plan = plans.find(p => String(p.plan_id || p.Plan_ID) === sel.value);
+      if (plan) {
+        amountInput.value = parseFloat(plan.fee || plan.Fee || 0).toFixed(2);
+        clearFieldError(amountInput);
+      } else {
+        amountInput.value = "";
+      }
     }
 
     // ─── MEMBER DROPDOWN POPULATE ──────────────────────────────────────────────
@@ -551,7 +565,13 @@
       const submitBtn = memberForm.querySelector('button[type="submit"]');
       const fd = new FormData(memberForm);
 
-      // Payload matches member table snake_case column names
+      const planId = fd.get("memberPlanId")?.toString().trim();
+      const amountVal = fd.get("memberAmount")?.toString().trim();
+      const paymentMode = fd.get("memberPaymentMode")?.toString().trim();
+      const paymentStatus = fd.get("memberPaymentStatus")?.toString().trim();
+      const paymentDate = fd.get("memberPaymentDate")?.toString().trim();
+      const amount = parseFloat(amountVal || "0");
+
       const payload = {
         name: fd.get("name")?.toString().trim(),
         gender: fd.get("gender")?.toString().trim(),
@@ -561,6 +581,11 @@
         address: fd.get("address")?.toString().trim(),
         branch_id: 1,
         gym_id: GYM_ID,
+        plan_id: planId ? parseInt(planId, 10) : null,
+        amount,
+        payment_mode: paymentMode,
+        status: paymentStatus,
+        payment_date: paymentDate || null,
       };
 
       let valid = true;
@@ -570,26 +595,33 @@
       if (!validateRequiredField($("address"), "Address")) valid = false;
       if (!validatePhoneField($("phone"))) valid = false;
       if (!validateEmailField($("email"), false)) valid = false;
+      if (!validateRequiredField($("memberPlanId"), "Membership Plan")) valid = false;
+      if (!validateRequiredField($("memberPaymentMode"), "Payment Mode")) valid = false;
+      if (!validateRequiredField($("memberPaymentStatus"), "Payment Status")) valid = false;
+      if (!validateRequiredField($("memberPaymentDate"), "Payment Date")) valid = false;
+      if (!amountVal) { setFieldError($("memberAmount"), "Amount is required."); valid = false; }
+      else if (isNaN(amount) || amount <= 0) { setFieldError($("memberAmount"), "Amount must be greater than zero."); valid = false; }
+      else clearFieldError($("memberAmount"));
       if (!valid) { showNotice(formNotice, "Please fix the highlighted fields.", "error"); return; }
 
       try {
-        setButtonLoading(submitBtn, true, "Adding...");
-        const res = await fetch(MEMBERS_API, {
+        setButtonLoading(submitBtn, true, "Registering...");
+        const res = await fetch(`${MEMBERS_API}/register`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         });
         const d = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(d.message || "Failed");
-        showNotice(formNotice, "Member added successfully.", "success");
+        if (!res.ok) throw new Error(d.message || "Registration failed. No records were created.");
+        showNotice(formNotice, "Member registered successfully.", "success");
         memberForm.reset();
-        await fetchMembers();
-        showToast("Member added successfully.");
+        await Promise.all([fetchMembers(), fetchPayments(), fetchEnrollments()]);
+        showToast("Member registered with enrollment and payment.");
       } catch (err) {
-        showNotice(formNotice, `Could not add member: ${err.message}`, "error");
-        showToast(`Could not add member: ${err.message}`, "error");
+        showNotice(formNotice, `Registration failed: ${err.message}`, "error");
+        showToast(`Registration failed: ${err.message}`, "error");
       } finally {
-        setButtonLoading(submitBtn, false, "Adding...");
+        setButtonLoading(submitBtn, false, "Registering...");
       }
     });
 
@@ -993,7 +1025,11 @@
 
       function openMemberModal() {
         modal.classList.add('active');
-        // Focus first input after transition
+        const dateInput = document.getElementById('memberPaymentDate');
+        if (dateInput && !dateInput.value) {
+          dateInput.value = new Date().toISOString().split('T')[0];
+        }
+        populatePlanDropdowns();
         setTimeout(() => document.getElementById('name')?.focus(), 80);
       }
       function closeMemberModal() {
@@ -1005,6 +1041,9 @@
       if (openBtn)   openBtn.addEventListener('click', openMemberModal);
       if (closeBtn)  closeBtn.addEventListener('click', closeMemberModal);
       if (cancelBtn) cancelBtn.addEventListener('click', closeMemberModal);
+
+      const memberPlanSel = document.getElementById('memberPlanId');
+      if (memberPlanSel) memberPlanSel.addEventListener('change', fillMemberAmountFromPlan);
 
       // Close on backdrop click
       modal.addEventListener('click', e => { if (e.target === modal) closeMemberModal(); });

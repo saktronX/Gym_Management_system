@@ -596,6 +596,45 @@
                   </div>
                 </div>
 
+                <div style="margin-top:24px;padding-top:20px;border-top:1px solid var(--border)">
+                  <h3 style="font-size:14px;font-weight:600;color:var(--txt);margin-bottom:16px">Membership Details</h3>
+                  <div class="grid">
+                    <div class="field">
+                      <label for="memberPlanId">Membership Plan <span style="color:var(--d)">*</span></label>
+                      <select id="memberPlanId" name="memberPlanId" required>
+                        <option value="">Select Plan</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="memberAmount">Amount (₹) <span style="color:var(--d)">*</span></label>
+                      <input type="number" id="memberAmount" name="memberAmount" min="0" step="0.01" placeholder="Auto-filled from plan" required />
+                    </div>
+                    <div class="field">
+                      <label for="memberPaymentMode">Payment Mode <span style="color:var(--d)">*</span></label>
+                      <select id="memberPaymentMode" name="memberPaymentMode" required>
+                        <option value="">Select Mode</option>
+                        <option value="Cash">Cash</option>
+                        <option value="Card">Card</option>
+                        <option value="UPI">UPI</option>
+                        <option value="Net Banking">Net Banking</option>
+                      </select>
+                    </div>
+                    <div class="field">
+                      <label for="memberPaymentDate">Payment Date <span style="color:var(--d)">*</span></label>
+                      <input type="date" id="memberPaymentDate" name="memberPaymentDate" required />
+                    </div>
+                    <div class="field">
+                      <label for="memberPaymentStatus">Payment Status <span style="color:var(--d)">*</span></label>
+                      <select id="memberPaymentStatus" name="memberPaymentStatus" required>
+                        <option value="">Select Status</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Completed">Completed</option>
+                        <option value="Failed">Failed</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
               </form>
             </div>
 
@@ -607,7 +646,7 @@
                   <polyline points="17 21 17 13 7 13 7 21"/>
                   <polyline points="7 3 7 8 15 8"/>
                 </svg>
-                Save Member
+                Register Member
               </button>
             </div>
 
