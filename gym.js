@@ -33,6 +33,9 @@
       { plan_id: 3, plan_name: "Pro", duration: 6, fee: 9000.00, description: "All Premium features + nutrition guidance + weekly tracking." },
     ];
 
+    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const PHONE_REGEX = /^\d{10}$/;
+
     // ─── DOM REFS ──────────────────────────────────────────────────────────────
     const $ = id => document.getElementById(id);
     const appContainer = $("appContainer");
@@ -79,8 +82,9 @@
     const cancelEditBtn = $("cancelEditBtn");
     const saveEditBtn = $("saveEditBtn");
 
-    const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    const PHONE_REGEX = /^\d{10}$/;
+    // ─── CHART INSTANCES ───────────────────────────────────────────────────────
+    let revenueChartInstance = null;
+    let enrollmentChartInstance = null;
 
     // ─── TABS ──────────────────────────────────────────────────────────────────
     function setActiveTab(targetTab) {
@@ -91,13 +95,12 @@
       });
       tabContents.forEach(sec => {
         const show = sec.dataset.tabContent === targetTab;
+        sec.classList.toggle("active-tab", show);
         if (show) {
-          sec.style.display = "";
           sec.classList.remove("tab-content-enter");
           void sec.offsetWidth;
           sec.classList.add("tab-content-enter");
         } else {
-          sec.style.display = "none";
           sec.classList.remove("tab-content-enter");
         }
       });
@@ -220,6 +223,155 @@
       else { btn.disabled = false; btn.textContent = btn.dataset.origText || btn.textContent; }
     }
 
+    // ─── CHART FUNCTIONS ───────────────────────────────────────────────────────
+    function initCharts() {
+      if (typeof Chart === "undefined") return;
+
+      const revenueCtx = document.getElementById("revenueChart");
+      if (revenueCtx) {
+        const monthMap = {};
+        payments.forEach(p => {
+          const raw = p.payment_date || p.created_at || null;
+          const key = raw
+            ? new Date(raw).toLocaleDateString("en-IN", { month: "short", year: "2-digit" })
+            : "Unknown";
+          monthMap[key] = (monthMap[key] || 0) + (parseFloat(p.amount) || 0);
+        });
+
+        const labels = Object.keys(monthMap);
+        const data = Object.values(monthMap);
+
+        if (revenueChartInstance) revenueChartInstance.destroy();
+        revenueChartInstance = new Chart(revenueCtx, {
+          type: "line",
+          data: {
+            labels: labels.length ? labels : ["No Data"],
+            datasets: [{
+              label: "Revenue (₹)",
+              data: data.length ? data : [0],
+              borderColor: "#2563EB",
+              backgroundColor: "rgba(37,99,235,0.08)",
+              borderWidth: 2.5,
+              fill: true,
+              tension: 0.42,
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              pointBackgroundColor: "#2563EB",
+              pointBorderColor: "#fff",
+              pointBorderWidth: 2,
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                callbacks: {
+                  label: ctx => " ₹" + ctx.parsed.y.toLocaleString("en-IN"),
+                },
+              },
+            },
+            scales: {
+              x: {
+                grid: { display: false },
+                ticks: { font: { size: 11 }, color: "#9CA3AF" },
+                border: { display: false },
+              },
+              y: {
+                grid: { color: "#F3F4F6", drawBorder: false },
+                ticks: {
+                  font: { size: 11 }, color: "#9CA3AF",
+                  callback: v => "₹" + Number(v).toLocaleString("en-IN"),
+                },
+                border: { display: false },
+              },
+            },
+          },
+        });
+      }
+
+      const enrollCtx = document.getElementById("enrollmentChart");
+      if (enrollCtx) {
+        const counts = { Active: 0, Inactive: 0, Expired: 0 };
+        enrollments.forEach(e => {
+          const s = e.status || e.Status || "";
+          if (Object.prototype.hasOwnProperty.call(counts, s)) counts[s]++;
+          else counts.Inactive++;
+        });
+
+        const total = counts.Active + counts.Inactive + counts.Expired;
+
+        if (enrollmentChartInstance) enrollmentChartInstance.destroy();
+        enrollmentChartInstance = new Chart(enrollCtx, {
+          type: "doughnut",
+          data: {
+            labels: ["Active", "Inactive", "Expired"],
+            datasets: [{
+              data: total > 0
+                ? [counts.Active, counts.Inactive, counts.Expired]
+                : [1, 0, 0],
+              backgroundColor: total > 0
+                ? ["#22C55E", "#EF4444", "#F97316"]
+                : ["#E5E7EB", "#E5E7EB", "#E5E7EB"],
+              borderWidth: 0,
+              hoverOffset: 8,
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: "72%",
+            plugins: {
+              legend: {
+                position: "bottom",
+                labels: { font: { size: 11 }, boxWidth: 10, padding: 16, color: "#6B7280" },
+              },
+              tooltip: {
+                callbacks: {
+                  label: ctx => {
+                    if (total === 0) return " No data";
+                    return ` ${ctx.label}: ${ctx.parsed} (${Math.round(ctx.parsed / total * 100)}%)`;
+                  },
+                },
+              },
+            },
+          },
+        });
+      }
+    }
+
+    function updateRecentPayments() {
+      const panel = document.getElementById("recentPaymentsList");
+      if (!panel) return;
+
+      const recent = payments.slice().reverse().slice(0, 6);
+
+      if (recent.length === 0) {
+        panel.innerHTML = '<div class="empty" style="padding:32px 16px">No payments yet — go to Payments to record one.</div>';
+        return;
+      }
+
+      const colors = ["#2563EB", "#22C55E", "#F97316", "#8B5CF6", "#EF4444", "#0EA5E9"];
+      panel.innerHTML = recent.map((p, i) => {
+        const name = escapeHtml(p.memberName || `Member #${p.member_id}`);
+        const initials = name.replace(/[^A-Za-z]/g, "").slice(0, 2).toUpperCase() || "M";
+        const amount = parseFloat(p.amount || 0).toLocaleString("en-IN", { style: "currency", currency: "INR", minimumFractionDigits: 2 });
+        const ps = p.status || p.Status || "";
+        const badgeClass = ps === "Completed" ? "badge-completed" : ps === "Pending" ? "badge-pending" : "badge-inactive";
+        const color = colors[i % colors.length];
+        return `
+          <div class="recent-item">
+            <div class="avatar" style="background:${color}">${initials}</div>
+            <div class="recent-info">
+              <div class="recent-name">${name}</div>
+              <div class="recent-sub">${escapeHtml(p.payment_mode || "—")} &nbsp;·&nbsp; <span class="badge ${badgeClass}">${escapeHtml(ps || "—")}</span></div>
+            </div>
+            <div class="recent-amount">${amount}</div>
+          </div>`;
+      }).join("");
+    }
+
     // ─── DASHBOARD STATS ───────────────────────────────────────────────────────
     function updateDashboardStats() {
       totalMembersCount.textContent = String(allMembers.length);
@@ -230,9 +382,16 @@
         currency: "INR",
         minimumFractionDigits: 2,
       });
-      // Phase 2 — refresh charts whenever stats update
       initCharts();
       updateRecentPayments();
+
+      const trainerBadge = document.getElementById("trainerCountBadge");
+      const paymentBadge = document.getElementById("paymentCountBadge");
+      const enrollmentBadge = document.getElementById("enrollmentCountBadge");
+
+      if (trainerBadge) trainerBadge.textContent = trainers.length + " trainer" + (trainers.length !== 1 ? "s" : "");
+      if (paymentBadge) paymentBadge.textContent = payments.length + " record" + (payments.length !== 1 ? "s" : "");
+      if (enrollmentBadge) enrollmentBadge.textContent = enrollments.length + " enrollment" + (enrollments.length !== 1 ? "s" : "");
     }
 
     // ─── MEMBERSHIP PLANS ──────────────────────────────────────────────────────
@@ -440,6 +599,10 @@
       editMemberIndex.value = String(idx);
       editName.value = m.name || ""; editGender.value = m.gender || "";
       editPhone.value = m.phone || ""; editEmail.value = m.email || "";
+      const dobEl = document.getElementById("editDob");
+      const addrEl = document.getElementById("editAddress");
+      if (dobEl) dobEl.value = m.date_of_birth || m.dob || "";
+      if (addrEl) addrEl.value = m.address || "";
       editMemberModal.classList.add("show");
     }
     function closeEditModal() { editMemberModal.classList.remove("show"); editMemberForm.reset(); }
@@ -461,6 +624,8 @@
         ...existing,
         name: editName.value.trim(), gender: editGender.value.trim(),
         phone: editPhone.value.trim(), email: editEmail.value.trim(),
+        date_of_birth: document.getElementById("editDob")?.value || existing.date_of_birth || "",
+        address: document.getElementById("editAddress")?.value.trim() || existing.address || "",
       };
 
       setButtonLoading(saveEditBtn, true, "Saving...");
@@ -817,195 +982,8 @@
       });
     }
 
-    // ─── INIT ──────────────────────────────────────────────────────────────────
-    function init() {
-      // Show fallback plans immediately so dropdowns aren't empty
-      plans = [...FALLBACK_PLANS];
-      renderPlans();
-      populatePlanDropdowns();
-      updateDashboardStats();
-
-      if (isAuthenticated()) {
-        showApp();
-        // All data comes from the database — no localStorage pre-seeding
-        fetchMembers();
-        fetchTrainers();
-        fetchPayments();
-        fetchEnrollments();
-        fetchPlans();
-      } else {
-        showLogin();
-      }
-    }
-
-    init();
-
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // PHASE 2 — CHART.JS INTEGRATION
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    let revenueChartInstance = null;
-    let enrollmentChartInstance = null;
-
-    function initCharts() {
-      if (typeof Chart === 'undefined') return;
-
-      // ── Revenue Line Chart ────────────────────────────────────────────────
-      const revenueCtx = document.getElementById('revenueChart');
-      if (revenueCtx) {
-        // Group payments by month (e.g. "Jun '25")
-        const monthMap = {};
-        payments.forEach(p => {
-          const raw = p.payment_date || p.created_at || null;
-          const key = raw
-            ? new Date(raw).toLocaleDateString('en-IN', { month: 'short', year: '2-digit' })
-            : 'Unknown';
-          monthMap[key] = (monthMap[key] || 0) + (parseFloat(p.amount) || 0);
-        });
-
-        const labels = Object.keys(monthMap);
-        const data   = Object.values(monthMap);
-
-        if (revenueChartInstance) revenueChartInstance.destroy();
-        revenueChartInstance = new Chart(revenueCtx, {
-          type: 'line',
-          data: {
-            labels: labels.length ? labels : ['No Data'],
-            datasets: [{
-              label: 'Revenue (₹)',
-              data:   data.length ? data : [0],
-              borderColor:     '#2563EB',
-              backgroundColor: 'rgba(37,99,235,0.08)',
-              borderWidth: 2.5,
-              fill: true,
-              tension: 0.42,
-              pointRadius: 4,
-              pointHoverRadius: 6,
-              pointBackgroundColor: '#2563EB',
-              pointBorderColor: '#fff',
-              pointBorderWidth: 2,
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-              legend: { display: false },
-              tooltip: {
-                callbacks: {
-                  label: ctx => ' ₹' + ctx.parsed.y.toLocaleString('en-IN'),
-                }
-              }
-            },
-            scales: {
-              x: {
-                grid: { display: false },
-                ticks: { font: { size: 11 }, color: '#9CA3AF' },
-                border: { display: false },
-              },
-              y: {
-                grid: { color: '#F3F4F6', drawBorder: false },
-                ticks: {
-                  font: { size: 11 }, color: '#9CA3AF',
-                  callback: v => '₹' + Number(v).toLocaleString('en-IN'),
-                },
-                border: { display: false },
-              }
-            }
-          }
-        });
-      }
-
-      // ── Enrollment Doughnut ───────────────────────────────────────────────
-      const enrollCtx = document.getElementById('enrollmentChart');
-      if (enrollCtx) {
-        const counts = { Active: 0, Inactive: 0, Expired: 0 };
-        enrollments.forEach(e => {
-          const s = e.status || e.Status || '';
-          if (Object.prototype.hasOwnProperty.call(counts, s)) counts[s]++;
-          else counts['Inactive']++;
-        });
-
-        const total = counts.Active + counts.Inactive + counts.Expired;
-
-        if (enrollmentChartInstance) enrollmentChartInstance.destroy();
-        enrollmentChartInstance = new Chart(enrollCtx, {
-          type: 'doughnut',
-          data: {
-            labels: ['Active', 'Inactive', 'Expired'],
-            datasets: [{
-              data: total > 0
-                ? [counts.Active, counts.Inactive, counts.Expired]
-                : [1, 0, 0],
-              backgroundColor: total > 0
-                ? ['#22C55E', '#EF4444', '#F97316']
-                : ['#E5E7EB', '#E5E7EB', '#E5E7EB'],
-              borderWidth: 0,
-              hoverOffset: 8,
-            }]
-          },
-          options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            cutout: '72%',
-            plugins: {
-              legend: {
-                position: 'bottom',
-                labels: { font: { size: 11 }, boxWidth: 10, padding: 16, color: '#6B7280' }
-              },
-              tooltip: {
-                callbacks: {
-                  label: ctx => {
-                    if (total === 0) return ' No data';
-                    return ` ${ctx.label}: ${ctx.parsed} (${Math.round(ctx.parsed / total * 100)}%)`;
-                  }
-                }
-              }
-            }
-          }
-        });
-      }
-    }
-
-    // ── Recent Payments panel (dashboard) ─────────────────────────────────
-    function updateRecentPayments() {
-      const panel = document.getElementById('recentPaymentsList');
-      if (!panel) return;
-
-      const recent = payments.slice().reverse().slice(0, 6);
-
-      if (recent.length === 0) {
-        panel.innerHTML = '<div class="empty" style="padding:32px 16px">No payments yet — go to Payments to record one.</div>';
-        return;
-      }
-
-      const colors = ['#2563EB','#22C55E','#F97316','#8B5CF6','#EF4444','#0EA5E9'];
-      panel.innerHTML = recent.map((p, i) => {
-        const name  = escapeHtml(p.memberName || `Member #${p.member_id}`);
-        const initials = name.replace(/[^A-Za-z]/g,'').slice(0,2).toUpperCase() || 'M';
-        const amount  = parseFloat(p.amount || 0).toLocaleString('en-IN', { style:'currency', currency:'INR', minimumFractionDigits:2 });
-        const ps = p.status || p.Status || '';
-        const badgeClass = ps === 'Completed' ? 'badge-completed' : ps === 'Pending' ? 'badge-pending' : 'badge-inactive';
-        const color = colors[i % colors.length];
-        return `
-          <div class="recent-item">
-            <div class="avatar" style="background:${color}">${initials}</div>
-            <div class="recent-info">
-              <div class="recent-name">${name}</div>
-              <div class="recent-sub">${escapeHtml(p.payment_mode || '—')} &nbsp;·&nbsp; <span class="badge ${badgeClass}">${escapeHtml(ps || '—')}</span></div>
-            </div>
-            <div class="recent-amount">${amount}</div>
-          </div>`;
-      }).join('');
-    }
-
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // PHASE 3 — MEMBER FORM MODAL
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    (function initMemberFormModal() {
+    // ─── MODAL FUNCTIONS ───────────────────────────────────────────────────────
+    function initMemberFormModal() {
       const modal         = document.getElementById('memberFormModal');
       const openBtn       = document.getElementById('openMemberFormBtn');
       const closeBtn      = document.getElementById('closeMemberFormBtn');
@@ -1048,15 +1026,9 @@
           }, 600);
         });
       }
-    })();
+    }
 
-
-    // ═══════════════════════════════════════════════════════════════════════════
-    // PHASE 8 — MODAL WIRING + COUNT BADGES + REFRESH BUTTONS
-    // ═══════════════════════════════════════════════════════════════════════════
-
-    // ── Trainer Form Modal ────────────────────────────────────────────────────
-    (function initTrainerFormModal() {
+    function initTrainerFormModal() {
       const modal     = document.getElementById('trainerFormModal');
       const openBtn   = document.getElementById('openTrainerFormBtn');
       const closeBtn  = document.getElementById('closeTrainerFormBtn');
@@ -1084,11 +1056,9 @@
           if (trainerNotice.classList.contains('success')) closeTrainerModal();
         }, 600);
       });
-    })();
+    }
 
-
-    // ── Payment Form Modal ────────────────────────────────────────────────────
-    (function initPaymentFormModal() {
+    function initPaymentFormModal() {
       const modal     = document.getElementById('paymentFormModal');
       const openBtn   = document.getElementById('openPaymentFormBtn');
       const closeBtn  = document.getElementById('closePaymentFormBtn');
@@ -1121,11 +1091,9 @@
           if (paymentNotice.classList.contains('success')) closePaymentModal();
         }, 600);
       });
-    })();
+    }
 
-
-    // ── Enrollment Form Modal ─────────────────────────────────────────────────
-    (function initEnrollmentFormModal() {
+    function initEnrollmentFormModal() {
       const modal     = document.getElementById('enrollmentFormModal');
       const openBtn   = document.getElementById('openEnrollmentFormBtn');
       const closeBtn  = document.getElementById('closeEnrollmentFormBtn');
@@ -1158,100 +1126,77 @@
           if (enrollmentNotice.classList.contains('success')) closeEnrollmentModal();
         }, 600);
       });
-    })();
+    }
 
+    function initEditMemberModalExtras() {
+      const cancelExtra = document.getElementById("cancelEditMemberBtn");
+      if (cancelExtra) cancelExtra.addEventListener("click", closeEditModal);
+    }
 
-    // ── Edit Member Modal — extra wiring (cancelEditMemberBtn added in Phase 7) ─
-    (function patchEditMemberModal() {
-      const cancelExtra = document.getElementById('cancelEditMemberBtn');
-      // cancelEditBtn (✕ button) already wired at line 495; wire the footer Cancel too
-      if (cancelExtra) cancelExtra.addEventListener('click', closeEditModal);
+    function registerRefreshButtons() {
+      const fetchPaymentsBtn = document.getElementById("fetchPaymentsBtn");
+      const fetchEnrollmentsBtn = document.getElementById("fetchEnrollmentsBtn");
 
-      // Also populate the new editDob / editAddress fields when opening edit modal
-      const origOpenEditModal = openEditModal;
-      // Monkey-patch openEditModal to also fill new fields
-      window._openEditModal = function(idx) {
-        origOpenEditModal(idx);
-        const m = allMembers[idx];
-        if (!m) return;
-        const dobEl  = document.getElementById('editDob');
-        const addrEl = document.getElementById('editAddress');
-        if (dobEl)  dobEl.value  = m.date_of_birth || m.dob || '';
-        if (addrEl) addrEl.value = m.address || '';
-      };
+      if (fetchPaymentsBtn) {
+        fetchPaymentsBtn.addEventListener("click", async () => {
+          fetchPaymentsBtn.disabled = true;
+          fetchPaymentsBtn.textContent = "Fetching…";
+          const loader = document.getElementById("paymentsLoader");
+          if (loader) loader.style.display = "flex";
+          await fetchPayments();
+          if (loader) loader.style.display = "none";
+          fetchPaymentsBtn.disabled = false;
+          fetchPaymentsBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg> Refresh`;
+        });
+      }
 
-      // Re-bind edit buttons to use patched version
-      document.addEventListener('click', e => {
-        const btn = e.target.closest('[data-member-edit]');
-        if (btn) window._openEditModal(parseInt(btn.dataset.memberEdit));
-      });
+      if (fetchEnrollmentsBtn) {
+        fetchEnrollmentsBtn.addEventListener("click", async () => {
+          fetchEnrollmentsBtn.disabled = true;
+          fetchEnrollmentsBtn.textContent = "Fetching…";
+          const loader = document.getElementById("enrollmentsLoader");
+          if (loader) loader.style.display = "flex";
+          await fetchEnrollments();
+          if (loader) loader.style.display = "none";
+          fetchEnrollmentsBtn.disabled = false;
+          fetchEnrollmentsBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg> Refresh`;
+        });
+      }
+    }
 
-      // Also persist dob + address in edit submit
-      editMemberForm.addEventListener('submit', () => {
-        const idx = parseInt(editMemberIndex.value || '-1');
-        if (idx < 0 || !allMembers[idx]) return;
-        const dobEl  = document.getElementById('editDob');
-        const addrEl = document.getElementById('editAddress');
-        if (dobEl)  allMembers[idx].date_of_birth = dobEl.value;
-        if (addrEl) allMembers[idx].address = addrEl.value;
-      });
-    })();
-
-
-    // ── Count Badges ──────────────────────────────────────────────────────────
-    // Use var (no TDZ) + function expression (not declaration, so no hoisting)
-    // so the original updateDashboardStats is captured before the wrapper runs.
-    var _origUpdateDashboardStats = updateDashboardStats;
-    updateDashboardStats = function () {
-      _origUpdateDashboardStats();
-
-      var trainerBadge    = document.getElementById('trainerCountBadge');
-      var paymentBadge    = document.getElementById('paymentCountBadge');
-      var enrollmentBadge = document.getElementById('enrollmentCountBadge');
-
-      if (trainerBadge)    trainerBadge.textContent    = trainers.length    + ' trainer'    + (trainers.length    !== 1 ? 's' : '');
-      if (paymentBadge)    paymentBadge.textContent    = payments.length    + ' record'     + (payments.length    !== 1 ? 's' : '');
-      if (enrollmentBadge) enrollmentBadge.textContent = enrollments.length + ' enrollment' + (enrollments.length !== 1 ? 's' : '');
-    };
-
-    // Trigger once on load so badges show correct values immediately
-    updateDashboardStats();
-
-
-    // ── Refresh Buttons (Payments + Enrollments) ───────────────────────────────
-    const fetchPaymentsBtn    = document.getElementById('fetchPaymentsBtn');
-    const fetchEnrollmentsBtn = document.getElementById('fetchEnrollmentsBtn');
-
-    if (fetchPaymentsBtn) {
-      fetchPaymentsBtn.addEventListener('click', async () => {
-        fetchPaymentsBtn.disabled = true;
-        fetchPaymentsBtn.textContent = 'Fetching…';
-        const loader = document.getElementById('paymentsLoader');
-        if (loader) loader.style.display = 'flex';
-        await fetchPayments();
-        if (loader) loader.style.display = 'none';
-        fetchPaymentsBtn.disabled = false;
-        fetchPaymentsBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg> Refresh`;
+    function registerGlobalEscapeKey() {
+      document.addEventListener("keydown", e => {
+        if (e.key !== "Escape") return;
+        const modals = document.querySelectorAll(".modal-overlay.active, .modal-overlay.show");
+        modals.forEach(m => m.classList.remove("active", "show"));
       });
     }
 
-    if (fetchEnrollmentsBtn) {
-      fetchEnrollmentsBtn.addEventListener('click', async () => {
-        fetchEnrollmentsBtn.disabled = true;
-        fetchEnrollmentsBtn.textContent = 'Fetching…';
-        const loader = document.getElementById('enrollmentsLoader');
-        if (loader) loader.style.display = 'flex';
-        await fetchEnrollments();
-        if (loader) loader.style.display = 'none';
-        fetchEnrollmentsBtn.disabled = false;
-        fetchEnrollmentsBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg> Refresh`;
-      });
+    // ─── INIT ──────────────────────────────────────────────────────────────────
+    function init() {
+      initMemberFormModal();
+      initTrainerFormModal();
+      initPaymentFormModal();
+      initEnrollmentFormModal();
+      initEditMemberModalExtras();
+      registerRefreshButtons();
+      registerGlobalEscapeKey();
+
+      plans = [...FALLBACK_PLANS];
+      renderPlans();
+      populatePlanDropdowns();
+      updateDashboardStats();
+
+      if (isAuthenticated()) {
+        showApp();
+        fetchMembers();
+        fetchTrainers();
+        fetchPayments();
+        fetchEnrollments();
+        fetchPlans();
+      } else {
+        showLogin();
+      }
     }
 
-
-    // ── Global Escape Key — close any open modal ──────────────────────────────
-    document.addEventListener('keydown', e => {
-      if (e.key !== 'Escape') return;
-      const modals = document.querySelectorAll('.modal-overlay.active, .modal-overlay.show');
-      modals.forEach(m => m.classList.remove('active', 'show'));
-    });
+    init();
