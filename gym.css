@@ -85,13 +85,6 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .btn-danger-soft{background:var(--dl);color:var(--d);border:none;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;transition:all var(--tr)}
 .btn-danger-soft:hover{background:var(--d);color:#fff}
 .btn-sm{padding:6px 12px;font-size:12px}
-/* ── Member Grid ── */
-#membersList{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;padding:20px}
-.member-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;transition:all var(--tr);box-shadow:var(--sh)}
-.member-card:hover{transform:translateY(-2px);box-shadow:var(--shm);border-color:var(--p)}
-.member-card h3{font-size:14px;font-weight:700;color:var(--txt);margin-bottom:8px}
-.member-card p{font-size:12px;color:var(--muted);margin-bottom:4px}
-.card-actions{display:flex;gap:8px;margin-top:12px}
 /* ── Trainer Grid ── */
 .trainer-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;padding:20px}
 .trainer-card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:18px;transition:all var(--tr);box-shadow:var(--sh)}
@@ -162,7 +155,6 @@ body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var
 .toast{padding:12px 18px;border-radius:12px;font-size:13px;font-weight:600;box-shadow:var(--shm);animation:slideUp .25s ease;color:#fff;max-width:320px}
 .toast.success,.toast{background:#1e293b}.toast.error{background:var(--d)}
 /* ── Loader ── */
-#membersLoader{display:none;align-items:center;justify-content:center;padding:40px}
 .loader{width:28px;height:28px;border:3px solid var(--bl);border-top-color:var(--p);border-radius:50%;animation:spin .8s linear infinite}
 /* ── Empty States ── */
 .empty{text-align:center;padding:40px;color:var(--muted);font-size:14px}

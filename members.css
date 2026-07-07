@@ -1,0 +1,1152 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   GymOS — Members Module (Premium SaaS Dashboard)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Page Layout ─────────────────────────────────────────────────────────── */
+.mem-page {
+  animation: memFadeIn 0.35s ease;
+}
+
+@keyframes memFadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.mem-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.mem-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--txt);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+.mem-subtitle {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 4px;
+  font-weight: 400;
+}
+
+/* ── Notice ──────────────────────────────────────────────────────────────── */
+.mem-notice {
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.mem-notice.error {
+  background: var(--dl);
+  color: var(--d);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.mem-notice.success {
+  background: var(--sl);
+  color: #15803d;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────────────── */
+.mem-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  border: none;
+  cursor: pointer;
+  transition: all 150ms ease;
+  position: relative;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.mem-btn svg {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.mem-btn-primary {
+  background: var(--p);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.25);
+}
+
+.mem-btn-primary:hover {
+  background: var(--pd);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+}
+
+.mem-btn-primary:active {
+  transform: translateY(0);
+}
+
+.mem-btn-secondary {
+  background: var(--card);
+  color: var(--txt);
+  border: 1px solid var(--border);
+}
+
+.mem-btn-secondary:hover {
+  background: var(--bg);
+  border-color: #d1d5db;
+}
+
+.mem-btn-ghost {
+  background: var(--card);
+  color: var(--muted);
+  border: 1px solid var(--border);
+}
+
+.mem-btn-ghost:hover {
+  color: var(--p);
+  border-color: var(--p);
+  background: var(--pl);
+}
+
+.mem-btn-danger {
+  background: var(--d);
+  color: #fff;
+}
+
+.mem-btn-danger:hover {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+.mem-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Ripple effect */
+.mem-btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle, rgba(255,255,255,0.35) 10%, transparent 10%);
+  transform: scale(10);
+  opacity: 0;
+  transition: transform 0.4s, opacity 0.6s;
+  pointer-events: none;
+}
+
+.mem-btn:active::after {
+  transform: scale(0);
+  opacity: 1;
+  transition: 0s;
+}
+
+/* ── Statistics ──────────────────────────────────────────────────────────── */
+.mem-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.mem-stat-card {
+  background: var(--card);
+  border-radius: var(--r);
+  padding: 20px 22px;
+  border: 1px solid var(--border);
+  box-shadow: var(--sh);
+  transition: transform 200ms ease, box-shadow 200ms ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.mem-stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: var(--r) var(--r) 0 0;
+}
+
+.mem-stat-green::before  { background: var(--s); }
+.mem-stat-orange::before { background: var(--a); }
+.mem-stat-red::before    { background: var(--d); }
+.mem-stat-gray::before   { background: var(--light); }
+
+.mem-stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shm);
+}
+
+.mem-stat-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.mem-stat-icon svg {
+  width: 20px;
+  height: 20px;
+}
+
+.mem-stat-green .mem-stat-icon  { background: var(--sl); color: var(--s); }
+.mem-stat-orange .mem-stat-icon { background: var(--al); color: var(--a); }
+.mem-stat-red .mem-stat-icon    { background: var(--dl); color: var(--d); }
+.mem-stat-gray .mem-stat-icon   { background: var(--bl); color: var(--muted); }
+
+.mem-stat-value {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--txt);
+  line-height: 1;
+  margin-bottom: 4px;
+  letter-spacing: -0.02em;
+}
+
+.mem-stat-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+/* ── Toolbar ─────────────────────────────────────────────────────────────── */
+.mem-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.mem-search-wrap {
+  flex: 1;
+  min-width: 240px;
+  position: relative;
+}
+
+.mem-search-icon {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 18px;
+  height: 18px;
+  color: var(--light);
+  pointer-events: none;
+}
+
+.mem-search-input {
+  width: 100%;
+  padding: 12px 16px 12px 44px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--txt);
+  background: var(--card);
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  box-shadow: var(--sh);
+}
+
+.mem-search-input:focus {
+  border-color: var(--p);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.mem-search-input::placeholder {
+  color: var(--light);
+}
+
+.mem-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.mem-select {
+  padding: 10px 32px 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--txt);
+  background: var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right 12px center;
+  appearance: none;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 150ms ease;
+}
+
+.mem-select:focus {
+  border-color: var(--p);
+}
+
+/* ── Table Container ─────────────────────────────────────────────────────── */
+.mem-table-wrap {
+  background: var(--card);
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  box-shadow: var(--sh);
+  overflow: hidden;
+  min-height: 200px;
+}
+
+.mem-table-scroll {
+  overflow-x: auto;
+  max-height: calc(100vh - 420px);
+  overflow-y: auto;
+}
+
+.mem-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.mem-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #fafbfc;
+}
+
+.mem-table th {
+  padding: 14px 16px;
+  text-align: left;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.mem-th-avatar { width: 52px; }
+.mem-th-actions { width: 120px; text-align: center; }
+
+.mem-table tbody tr {
+  border-bottom: 1px solid var(--bl);
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+.mem-table tbody tr:nth-child(even) {
+  background: rgba(248, 250, 252, 0.6);
+}
+
+.mem-table tbody tr:hover {
+  background: var(--pl);
+}
+
+.mem-table tbody tr.mem-row-active {
+  background: rgba(37, 99, 235, 0.06);
+}
+
+.mem-table td {
+  padding: 14px 16px;
+  vertical-align: middle;
+  color: var(--txt);
+}
+
+.mem-td-name {
+  font-weight: 600;
+  color: var(--txt);
+}
+
+.mem-td-muted {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.mem-highlight {
+  background: #fef9c3;
+  border-radius: 3px;
+  padding: 0 2px;
+}
+
+/* Avatar */
+.mem-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+/* Status badges */
+.mem-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mem-badge-active      { background: var(--sl); color: #15803d; }
+.mem-badge-expiring    { background: var(--al); color: #c2410c; }
+.mem-badge-expired     { background: var(--dl); color: var(--d); }
+.mem-badge-none        { background: var(--bl); color: var(--muted); }
+.mem-badge-plan        { background: var(--pl); color: var(--p); }
+
+/* Action icons */
+.mem-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.mem-icon-btn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 150ms ease;
+  position: relative;
+}
+
+.mem-icon-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.mem-icon-btn:hover {
+  background: var(--bl);
+  color: var(--p);
+  transform: translateY(-1px);
+}
+
+.mem-icon-btn.mem-icon-danger:hover {
+  background: var(--dl);
+  color: var(--d);
+}
+
+.mem-icon-btn[data-tooltip]::before {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%) scale(0.9);
+  background: var(--sb);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms, transform 120ms;
+}
+
+.mem-icon-btn:hover[data-tooltip]::before {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+/* ── Mobile Cards ────────────────────────────────────────────────────────── */
+.mem-cards {
+  display: none;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+}
+
+.mem-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  cursor: pointer;
+  transition: box-shadow 200ms ease, transform 200ms ease;
+}
+
+.mem-card:hover {
+  box-shadow: var(--shm);
+  transform: translateY(-1px);
+}
+
+.mem-card-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.mem-card-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--txt);
+}
+
+.mem-card-meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.mem-card-meta dt {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.mem-card-meta dd {
+  color: var(--txt);
+  font-weight: 500;
+  margin: 0;
+}
+
+.mem-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--bl);
+}
+
+/* ── Empty State ─────────────────────────────────────────────────────────── */
+.mem-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 24px;
+  text-align: center;
+}
+
+.mem-empty-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: var(--bl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 20px;
+  color: var(--light);
+}
+
+.mem-empty-icon svg {
+  width: 36px;
+  height: 36px;
+}
+
+.mem-empty-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--txt);
+  margin-bottom: 6px;
+}
+
+.mem-empty-sub {
+  font-size: 14px;
+  color: var(--muted);
+  margin-bottom: 24px;
+}
+
+/* ── Skeleton Loaders ────────────────────────────────────────────────────── */
+.mem-table-loader {
+  padding: 8px 0;
+}
+
+.mem-skeleton-row {
+  height: 56px;
+  margin: 8px 16px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, var(--bl) 25%, #e8ecf0 50%, var(--bl) 75%);
+  background-size: 200% 100%;
+  animation: memShimmer 1.4s infinite;
+}
+
+@keyframes memShimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+.mem-spinner {
+  width: 28px;
+  height: 28px;
+  border: 3px solid var(--bl);
+  border-top-color: var(--p);
+  border-radius: 50%;
+  animation: memSpin 0.7s linear infinite;
+}
+
+@keyframes memSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Pagination ──────────────────────────────────────────────────────────── */
+.mem-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+.mem-pagination-info {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.mem-pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.mem-page-btn {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--card);
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--txt);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.mem-page-btn:hover:not(:disabled) {
+  border-color: var(--p);
+  color: var(--p);
+}
+
+.mem-page-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.mem-page-numbers {
+  display: flex;
+  gap: 4px;
+}
+
+.mem-page-num {
+  width: 34px;
+  height: 34px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.mem-page-num:hover {
+  background: var(--bl);
+  color: var(--txt);
+}
+
+.mem-page-num.active {
+  background: var(--p);
+  color: #fff;
+  border-color: var(--p);
+}
+
+/* ── Drawer ──────────────────────────────────────────────────────────────── */
+.mem-drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(4px);
+  z-index: 300;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 250ms ease, visibility 250ms ease;
+}
+
+.mem-drawer-overlay.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+.mem-drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: min(440px, 100vw);
+  height: 100vh;
+  background: var(--card);
+  z-index: 301;
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.12);
+  transform: translateX(100%);
+  transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+}
+
+.mem-drawer.open {
+  transform: translateX(0);
+}
+
+.mem-drawer-inner {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  padding: 28px 24px 24px;
+}
+
+.mem-drawer-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 10px;
+  background: var(--bl);
+  color: var(--muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 150ms ease;
+  z-index: 1;
+}
+
+.mem-drawer-close:hover {
+  background: var(--border);
+  color: var(--txt);
+}
+
+.mem-drawer-close svg {
+  width: 18px;
+  height: 18px;
+}
+
+.mem-drawer-header {
+  text-align: center;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+
+.mem-drawer-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 auto 16px;
+}
+
+.mem-drawer-name {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--txt);
+  margin-bottom: 10px;
+  letter-spacing: -0.02em;
+}
+
+.mem-drawer-badges {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.mem-drawer-section {
+  margin-bottom: 24px;
+}
+
+.mem-drawer-section-title {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 12px;
+}
+
+.mem-drawer-dl {
+  display: grid;
+  gap: 0;
+}
+
+.mem-drawer-dl > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--bl);
+}
+
+.mem-drawer-dl > div:last-child {
+  border-bottom: none;
+}
+
+.mem-drawer-dl dt {
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.mem-drawer-dl dd {
+  font-size: 13px;
+  color: var(--txt);
+  font-weight: 500;
+  text-align: right;
+  margin: 0;
+}
+
+.mem-drawer-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 24px;
+  border-top: 1px solid var(--border);
+}
+
+.mem-drawer-loader,
+.mem-drawer-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 48px 24px;
+  color: var(--muted);
+  font-size: 14px;
+  flex: 1;
+}
+
+.mem-drawer-error {
+  color: var(--d);
+}
+
+/* ── Modals ──────────────────────────────────────────────────────────────── */
+.mem-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.55);
+  backdrop-filter: blur(4px);
+  z-index: 400;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: memFadeIn 0.2s ease;
+}
+
+.mem-modal-overlay.open {
+  display: flex;
+}
+
+.mem-modal {
+  background: var(--card);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 640px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shl);
+  animation: memModalIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mem-modal-sm {
+  max-width: 420px;
+}
+
+@keyframes memModalIn {
+  from { opacity: 0; transform: scale(0.96) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.mem-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.mem-modal-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--txt);
+}
+
+.mem-modal-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 8px;
+  background: var(--bl);
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 150ms ease;
+}
+
+.mem-modal-close:hover {
+  background: var(--border);
+  color: var(--txt);
+}
+
+.mem-modal-body {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.mem-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+}
+
+/* ── Forms ───────────────────────────────────────────────────────────────── */
+.mem-form-section {
+  margin-bottom: 28px;
+}
+
+.mem-form-section:last-child {
+  margin-bottom: 0;
+}
+
+.mem-form-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--txt);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--bl);
+}
+
+.mem-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.mem-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mem-field-full {
+  grid-column: 1 / -1;
+}
+
+.mem-field label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.mem-req {
+  color: var(--d);
+}
+
+.mem-field input,
+.mem-field select {
+  padding: 10px 14px;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--txt);
+  background: #fff;
+  outline: none;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.mem-field input:focus,
+.mem-field select:focus {
+  border-color: var(--p);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.mem-field.has-error input,
+.mem-field.has-error select {
+  border-color: var(--d);
+}
+
+.mem-field .mem-error-text {
+  font-size: 11px;
+  color: var(--d);
+  font-weight: 500;
+}
+
+/* Delete modal */
+.mem-delete-body {
+  text-align: center;
+  padding: 8px 0 16px;
+}
+
+.mem-delete-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--dl);
+  color: var(--d);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.mem-delete-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.mem-delete-text {
+  font-size: 14px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.mem-delete-text strong {
+  color: var(--txt);
+}
+
+/* ── Responsive ────────────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .mem-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .mem-toolbar-add {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .mem-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .mem-header .mem-btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .mem-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  .mem-stat-value {
+    font-size: 26px;
+  }
+
+  .mem-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .mem-search-wrap {
+    min-width: 0;
+  }
+
+  .mem-toolbar-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .mem-toolbar-actions .mem-btn-ghost {
+    grid-column: 1 / -1;
+  }
+
+  .mem-table-scroll {
+    display: none !important;
+  }
+
+  .mem-cards {
+    display: flex !important;
+  }
+
+  .mem-pagination {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .mem-pagination-controls {
+    justify-content: center;
+  }
+
+  .mem-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mem-drawer {
+    width: 100vw;
+  }
+}
+
+@media (max-width: 480px) {
+  .mem-stats {
+    grid-template-columns: 1fr;
+  }
+
+  .mem-title {
+    font-size: 24px;
+  }
+}

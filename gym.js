@@ -20,7 +20,6 @@
     const ENROLLMENTS_KEY = "gms_enrollments";
     const PLANS_KEY = "gms_plans";
 
-    let allMembers = [];
     let trainers = [];
     let payments = [];
     let enrollments = [];
@@ -45,14 +44,6 @@
     const loginPassword = $("loginPassword");
     const loginNotice = $("loginNotice");
     const logoutBtn = $("logoutBtn");
-    const memberForm = $("memberForm");
-    const fetchMembersBtn = $("fetchMembersBtn");
-    const membersList = $("membersList");
-    const emptyState = $("emptyState");
-    const formNotice = $("formNotice");
-    const membersNotice = $("membersNotice");
-    const totalMembersCount = $("totalMembersCount");
-    const memberSearch = $("memberSearch");
     const trainerForm = $("trainerForm");
     const trainerNotice = $("trainerNotice");
     const trainerList = $("trainerList");
@@ -63,8 +54,8 @@
     const paymentEmptyState = $("paymentEmptyState");
     const totalTrainersCount = $("totalTrainersCount");
     const totalRevenueValue = $("totalRevenueValue");
+    const totalMembersCount = $("totalMembersCount");
     const toastContainer = $("toastContainer");
-    const membersLoader = $("membersLoader");
     const plansGrid = $("plansGrid");
     const enrollmentForm = $("enrollmentForm");
     const enrollmentNotice = $("enrollmentNotice");
@@ -72,15 +63,6 @@
     const enrollmentEmptyState = $("enrollmentEmptyState");
     const tabButtons = document.querySelectorAll(".tab-btn");
     const tabContents = document.querySelectorAll("[data-tab-content]");
-    const editMemberModal = $("editMemberModal");
-    const editMemberForm = $("editMemberForm");
-    const editMemberIndex = $("editMemberIndex");
-    const editName = $("editName");
-    const editGender = $("editGender");
-    const editPhone = $("editPhone");
-    const editEmail = $("editEmail");
-    const cancelEditBtn = $("cancelEditBtn");
-    const saveEditBtn = $("saveEditBtn");
 
     // ─── CHART INSTANCES ───────────────────────────────────────────────────────
     let revenueChartInstance = null;
@@ -141,6 +123,11 @@
         loginForm.reset();
         showApp();
         showToast("Login successful.");
+        if (window.MembersModule) MembersModule.load();
+        fetchTrainers();
+        fetchPayments();
+        fetchEnrollments();
+        fetchPlans();
       } else {
         showNotice(loginNotice, "Invalid username or password.", "error");
       }
@@ -374,7 +361,8 @@
 
     // ─── DASHBOARD STATS ───────────────────────────────────────────────────────
     function updateDashboardStats() {
-      totalMembersCount.textContent = String(allMembers.length);
+      const members = window.MembersModule ? MembersModule.getMembers() : [];
+      totalMembersCount.textContent = String(members.length);
       totalTrainersCount.textContent = String(trainers.length);
       const total = payments.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
       totalRevenueValue.textContent = total.toLocaleString("en-IN", {
@@ -408,6 +396,7 @@
       }
       renderPlans();
       populatePlanDropdowns();
+      if (window.MembersModule) MembersModule.setPlans(plans);
     }
 
     function renderPlans() {
@@ -423,8 +412,7 @@
     }
 
     function populatePlanDropdowns() {
-      // Populate enrollment, payment, and member-registration plan dropdowns
-      [$("enrollPlanId"), $("paymentPlanId"), $("memberPlanId")].forEach(sel => {
+      [$("enrollPlanId"), $("paymentPlanId")].forEach(sel => {
         if (!sel) return;
         const prev = sel.value;
         sel.innerHTML = '<option value="">Select Plan</option>';
@@ -438,22 +426,9 @@
       });
     }
 
-    /** Auto-fill registration amount when a plan is selected (amount remains editable). */
-    function fillMemberAmountFromPlan() {
-      const sel = $("memberPlanId");
-      const amountInput = $("memberAmount");
-      if (!sel || !amountInput) return;
-      const plan = plans.find(p => String(p.plan_id || p.Plan_ID) === sel.value);
-      if (plan) {
-        amountInput.value = parseFloat(plan.fee || plan.Fee || 0).toFixed(2);
-        clearFieldError(amountInput);
-      } else {
-        amountInput.value = "";
-      }
-    }
-
     // ─── MEMBER DROPDOWN POPULATE ──────────────────────────────────────────────
     function populateMemberDropdowns() {
+      const allMembers = window.MembersModule ? MembersModule.getMembers() : [];
       // Both payment and enrollment have member selectors (after DB migration)
       [$("paymentMemberId"), $("enrollMemberId")].forEach(sel => {
         if (!sel) return;
@@ -468,229 +443,6 @@
         if (prev) sel.value = prev;
       });
     }
-
-    // ─── MEMBERS ───────────────────────────────────────────────────────────────
-    async function fetchMembers() {
-      clearNotice(membersNotice);
-      setButtonLoading(fetchMembersBtn, true, "Fetching...");
-      membersLoader.style.display = "flex";
-      try {
-        const res = await fetch(MEMBERS_API);
-        if (!res.ok) throw new Error("Backend not connected");
-        const json = await res.json();
-        const rows = json.data ?? (Array.isArray(json) ? json : []);
-        allMembers = rows.map(m => ({
-          ...m,
-          id: m.member_id || m.id,
-          gym_id: m.gym_id || GYM_ID,
-        }));
-        updateDashboardStats();
-        renderMembers(allMembers);
-        populateMemberDropdowns();
-        showToast("Members loaded successfully.");
-      } catch {
-        allMembers = [];
-        updateDashboardStats();
-        renderMembers(allMembers);
-        showNotice(membersNotice, "Backend not connected", "error");
-        showToast("Backend not connected", "error");
-      } finally {
-        setButtonLoading(fetchMembersBtn, false, "Fetching...");
-        membersLoader.style.display = "none";
-      }
-    }
-
-    fetchMembersBtn.addEventListener("click", fetchMembers);
-
-    function renderMembers(members) {
-      membersList.innerHTML = "";
-      const term = memberSearch.value.trim().toLowerCase();
-      const filtered = members
-        .map((m, i) => ({ ...m, _idx: i }))
-        .filter(m => (m.name || "").toLowerCase().includes(term));
-
-      if (filtered.length === 0) {
-        emptyState.style.display = "block";
-        emptyState.textContent = term ? "No matching members found." : "No members found.";
-        return;
-      }
-      emptyState.style.display = "none";
-
-      filtered.forEach(m => {
-        const card = document.createElement("article");
-        card.className = "member-card";
-        card.innerHTML = `
-            <h3>${highlightMatch(m.name || "Unknown", term)}</h3>
-            <p><strong>Gender:</strong> ${escapeHtml(m.gender || "—")}</p>
-            <p><strong>Phone:</strong> ${escapeHtml(m.phone || "—")}</p>
-            <p><strong>Email:</strong> ${escapeHtml(m.email || "—")}</p>
-            <div class="card-actions">
-              <button type="button" class="btn-soft" data-member-edit="${m._idx}">Edit</button>
-              <button type="button" class="btn-danger-soft" data-member-delete="${m._idx}">Delete</button>
-            </div>`;
-        membersList.appendChild(card);
-      });
-
-      document.querySelectorAll("[data-member-edit]").forEach(btn => {
-        btn.addEventListener("click", () => openEditModal(parseInt(btn.dataset.memberEdit)));
-      });
-      document.querySelectorAll("[data-member-delete]").forEach(btn => {
-        btn.addEventListener("click", async () => {
-          const idx = parseInt(btn.dataset.memberDelete);
-          if (idx < 0 || !allMembers[idx]) return;
-          if (!confirm("Delete this member?")) return;
-          const member = allMembers[idx];
-          let ok = false;
-          if (member.id) {
-            try {
-              const res = await fetch(`${MEMBERS_API}/${member.id}`, { method: "DELETE" });
-              ok = res.ok;
-            } catch { ok = false; }
-          }
-          allMembers.splice(idx, 1);
-          updateDashboardStats();
-          renderMembers(allMembers);
-          populateMemberDropdowns();
-          showToast(ok ? "Member deleted successfully." : "Backend unavailable — removed locally.", ok ? "success" : "error");
-        });
-      });
-    }
-
-    memberSearch.addEventListener("input", () => renderMembers(allMembers));
-
-    memberForm.addEventListener("submit", async e => {
-      e.preventDefault();
-      clearNotice(formNotice);
-      clearFormErrors(memberForm);
-      const submitBtn = memberForm.querySelector('button[type="submit"]');
-      const fd = new FormData(memberForm);
-
-      const planId = fd.get("memberPlanId")?.toString().trim();
-      const amountVal = fd.get("memberAmount")?.toString().trim();
-      const paymentMode = fd.get("memberPaymentMode")?.toString().trim();
-      const paymentStatus = fd.get("memberPaymentStatus")?.toString().trim();
-      const paymentDate = fd.get("memberPaymentDate")?.toString().trim();
-      const amount = parseFloat(amountVal || "0");
-
-      const payload = {
-        name: fd.get("name")?.toString().trim(),
-        gender: fd.get("gender")?.toString().trim(),
-        date_of_birth: fd.get("dob")?.toString().trim(),
-        phone: fd.get("phone")?.toString().trim(),
-        email: fd.get("email")?.toString().trim() || null,
-        address: fd.get("address")?.toString().trim(),
-        branch_id: 1,
-        gym_id: GYM_ID,
-        plan_id: planId ? parseInt(planId, 10) : null,
-        amount,
-        payment_mode: paymentMode,
-        status: paymentStatus,
-        payment_date: paymentDate || null,
-      };
-
-      let valid = true;
-      if (!validateRequiredField($("name"), "Name")) valid = false;
-      if (!validateRequiredField($("gender"), "Gender")) valid = false;
-      if (!validateRequiredField($("dob"), "DOB")) valid = false;
-      if (!validateRequiredField($("address"), "Address")) valid = false;
-      if (!validatePhoneField($("phone"))) valid = false;
-      if (!validateEmailField($("email"), false)) valid = false;
-      if (!validateRequiredField($("memberPlanId"), "Membership Plan")) valid = false;
-      if (!validateRequiredField($("memberPaymentMode"), "Payment Mode")) valid = false;
-      if (!validateRequiredField($("memberPaymentStatus"), "Payment Status")) valid = false;
-      if (!validateRequiredField($("memberPaymentDate"), "Payment Date")) valid = false;
-      if (!amountVal) { setFieldError($("memberAmount"), "Amount is required."); valid = false; }
-      else if (isNaN(amount) || amount <= 0) { setFieldError($("memberAmount"), "Amount must be greater than zero."); valid = false; }
-      else clearFieldError($("memberAmount"));
-      if (!valid) { showNotice(formNotice, "Please fix the highlighted fields.", "error"); return; }
-
-      try {
-        setButtonLoading(submitBtn, true, "Registering...");
-        const res = await fetch(`${MEMBERS_API}/register`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        const d = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(d.message || "Registration failed. No records were created.");
-        showNotice(formNotice, "Member registered successfully.", "success");
-        memberForm.reset();
-        await Promise.all([fetchMembers(), fetchPayments(), fetchEnrollments()]);
-        showToast("Member registered with enrollment and payment.");
-      } catch (err) {
-        showNotice(formNotice, `Registration failed: ${err.message}`, "error");
-        showToast(`Registration failed: ${err.message}`, "error");
-      } finally {
-        setButtonLoading(submitBtn, false, "Registering...");
-      }
-    });
-
-    // ─── EDIT MEMBER MODAL ─────────────────────────────────────────────────────
-    function openEditModal(idx) {
-      const m = allMembers[idx]; if (!m) return;
-      editMemberIndex.value = String(idx);
-      editName.value = m.name || ""; editGender.value = m.gender || "";
-      editPhone.value = m.phone || ""; editEmail.value = m.email || "";
-      const dobEl = document.getElementById("editDob");
-      const addrEl = document.getElementById("editAddress");
-      if (dobEl) dobEl.value = m.date_of_birth || m.dob || "";
-      if (addrEl) addrEl.value = m.address || "";
-      editMemberModal.classList.add("show");
-    }
-    function closeEditModal() { editMemberModal.classList.remove("show"); editMemberForm.reset(); }
-
-    editMemberForm.addEventListener("submit", async e => {
-      e.preventDefault();
-      clearFormErrors(editMemberForm);
-      const idx = parseInt(editMemberIndex.value || "-1");
-      const existing = allMembers[idx]; if (!existing) { closeEditModal(); return; }
-
-      let valid = true;
-      if (!validateRequiredField(editName, "Name")) valid = false;
-      if (!validateRequiredField(editGender, "Gender")) valid = false;
-      if (!validatePhoneField(editPhone)) valid = false;
-      if (!validateEmailField(editEmail, false)) valid = false;
-      if (!valid) { showToast("Please fix the highlighted fields.", "error"); return; }
-
-      const updated = {
-        ...existing,
-        name: editName.value.trim(), gender: editGender.value.trim(),
-        phone: editPhone.value.trim(), email: editEmail.value.trim(),
-        date_of_birth: document.getElementById("editDob")?.value || existing.date_of_birth || "",
-        address: document.getElementById("editAddress")?.value.trim() || existing.address || "",
-      };
-
-      setButtonLoading(saveEditBtn, true, "Saving...");
-      let ok = false;
-      if (existing.id) {
-        try {
-          const res = await fetch(`${MEMBERS_API}/${existing.id}`, {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              name: updated.name,
-              gender: updated.gender,
-              phone: updated.phone,
-              email: updated.email || null,
-              address: updated.address || existing.address || "",
-              date_of_birth: updated.date_of_birth || existing.date_of_birth || "",
-              branch_id: existing.branch_id || 1,
-              gym_id: existing.gym_id || GYM_ID,
-            }),
-          });
-          ok = res.ok;
-        } catch { ok = false; }
-      }
-      allMembers[idx] = updated;
-      renderMembers(allMembers);
-      populateMemberDropdowns();
-      closeEditModal();
-      setButtonLoading(saveEditBtn, false, "Saving...");
-      showToast(ok ? "Member updated successfully." : "Backend unavailable — updated locally.", ok ? "success" : "error");
-    });
-
-    cancelEditBtn.addEventListener("click", closeEditModal);
-    editMemberModal.addEventListener("click", e => { if (e.target === editMemberModal) closeEditModal(); });
 
     // ─── TRAINERS ──────────────────────────────────────────────────────────────
     async function fetchTrainers() {
@@ -1015,58 +767,6 @@
     }
 
     // ─── MODAL FUNCTIONS ───────────────────────────────────────────────────────
-    function initMemberFormModal() {
-      const modal         = document.getElementById('memberFormModal');
-      const openBtn       = document.getElementById('openMemberFormBtn');
-      const closeBtn      = document.getElementById('closeMemberFormBtn');
-      const cancelBtn     = document.getElementById('cancelMemberFormBtn');
-
-      if (!modal) return; // guard: modal not in DOM yet
-
-      function openMemberModal() {
-        modal.classList.add('active');
-        const dateInput = document.getElementById('memberPaymentDate');
-        if (dateInput && !dateInput.value) {
-          dateInput.value = new Date().toISOString().split('T')[0];
-        }
-        populatePlanDropdowns();
-        setTimeout(() => document.getElementById('name')?.focus(), 80);
-      }
-      function closeMemberModal() {
-        modal.classList.remove('active');
-        // Clear the inline form notice too
-        clearNotice(formNotice);
-      }
-
-      if (openBtn)   openBtn.addEventListener('click', openMemberModal);
-      if (closeBtn)  closeBtn.addEventListener('click', closeMemberModal);
-      if (cancelBtn) cancelBtn.addEventListener('click', closeMemberModal);
-
-      const memberPlanSel = document.getElementById('memberPlanId');
-      if (memberPlanSel) memberPlanSel.addEventListener('change', fillMemberAmountFromPlan);
-
-      // Close on backdrop click
-      modal.addEventListener('click', e => { if (e.target === modal) closeMemberModal(); });
-
-      // Close modal automatically after a successful member add
-      // Patch: wrap the existing memberForm submit to also close modal on success
-      const origMemberForm = memberForm;
-      if (origMemberForm) {
-        origMemberForm.addEventListener('submit', () => {
-          // The real submit handler fires first (gym.js line ~385).
-          // After it resolves we check formNotice for success class.
-          setTimeout(() => {
-            if (formNotice.classList.contains('success')) {
-              closeMemberModal();
-              // Mirror topbar search clear into local search box
-              const local = document.getElementById('memberSearchLocal');
-              if (local) local.value = '';
-            }
-          }, 600);
-        });
-      }
-    }
-
     function initTrainerFormModal() {
       const modal     = document.getElementById('trainerFormModal');
       const openBtn   = document.getElementById('openTrainerFormBtn');
@@ -1167,11 +867,6 @@
       });
     }
 
-    function initEditMemberModalExtras() {
-      const cancelExtra = document.getElementById("cancelEditMemberBtn");
-      if (cancelExtra) cancelExtra.addEventListener("click", closeEditModal);
-    }
-
     function registerRefreshButtons() {
       const fetchPaymentsBtn = document.getElementById("fetchPaymentsBtn");
       const fetchEnrollmentsBtn = document.getElementById("fetchEnrollmentsBtn");
@@ -1212,12 +907,10 @@
     }
 
     // ─── INIT ──────────────────────────────────────────────────────────────────
-    function init() {
-      initMemberFormModal();
+    async function init() {
       initTrainerFormModal();
       initPaymentFormModal();
       initEnrollmentFormModal();
-      initEditMemberModalExtras();
       registerRefreshButtons();
       registerGlobalEscapeKey();
 
@@ -1226,9 +919,25 @@
       populatePlanDropdowns();
       updateDashboardStats();
 
+      if (window.MembersModule) {
+        await MembersModule.init({
+          API_BASE,
+          MEMBERS_API,
+          GYM_ID,
+          showToast,
+          plans,
+          onMembersUpdate: () => {
+            populateMemberDropdowns();
+            updateDashboardStats();
+          },
+          onPaymentsRefresh: fetchPayments,
+          onEnrollmentsRefresh: fetchEnrollments,
+        });
+      }
+
       if (isAuthenticated()) {
         showApp();
-        fetchMembers();
+        if (window.MembersModule) await MembersModule.load();
         fetchTrainers();
         fetchPayments();
         fetchEnrollments();
