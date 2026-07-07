@@ -559,76 +559,155 @@
   }
 
   async function loadDrawerProfile(memberId) {
+
     const loader = $("memDrawerLoader");
     const content = $("memDrawerContent");
     const error = $("memDrawerError");
-    loader.hidden = false;
-    content.hidden = true;
-    error.hidden = true;
+
+    let data = profileCache.get(memberId);
+
+    // If profile is already cached, skip skeleton completely
+    if (data) {
+        loader.hidden = true;
+        error.hidden = true;
+        content.hidden = false;
+    } else {
+        loader.hidden = false;
+        content.hidden = true;
+        error.hidden = true;
+    }
 
     try {
-      let data = profileCache.get(memberId);
-      if (!data) {
-        const res = await fetch(`${config.MEMBERS_API}/${memberId}/profile`);
-        const json = await res.json().catch(() => ({}));
-        if (!res.ok) throw new Error(json.message || "Could not load profile.");
-        data = json.data;
-        profileCache.set(memberId, data);
-      }
 
-      const { member, enrollment, payment } = data;
-      const color = avatarColor(member.name);
-      const initials = memberInitials(member.name);
-      const status = membershipStatusMeta(enrollment);
+        if (!data) {
+            const res = await fetch(`${config.MEMBERS_API}/${memberId}/profile`);
+            const json = await res.json().catch(() => ({}));
 
-      $("memDrawerAvatar").textContent = initials;
-      $("memDrawerAvatar").style.background = color;
-      $("memDrawerName").textContent = member.name || "Member";
-      $("memDrawerStatusBadge").className = `mem-badge ${status.badgeClass}`;
-      $("memDrawerStatusBadge").textContent = status.label;
-      $("memDrawerPlanBadge").textContent = enrollment?.plan_name || "No Plan";
+            if (!res.ok)
+                throw new Error(json.message || "Could not load profile.");
 
-      $("memDrawerPersonal").innerHTML = [
-        drawerDlRow("Phone", escapeHtml(member.phone || "—")),
-        drawerDlRow("Email", escapeHtml(member.email || "—")),
-        drawerDlRow("Gender", escapeHtml(member.gender || "—")),
-        drawerDlRow("DOB", formatDate(member.date_of_birth)),
-        drawerDlRow("Address", escapeHtml(member.address || "—")),
-      ].join("");
+            data = json.data;
+            profileCache.set(memberId, data);
+        }
 
-      if (enrollment) {
-        const days = daysRemaining(enrollment.end_date);
-        const daysLabel = days === null ? "—" : days < 0 ? "0 days" : `${days} day${days === 1 ? "" : "s"}`;
-        $("memDrawerMembership").innerHTML = [
-          drawerDlRow("Plan", escapeHtml(enrollment.plan_name || "—")),
-          drawerDlRow("Fee", formatCurrency(enrollment.plan_fee)),
-          drawerDlRow("Join Date", formatDate(enrollment.start_date)),
-          drawerDlRow("Expiry Date", formatDate(enrollment.end_date)),
-          drawerDlRow("Remaining Days", daysLabel),
+        const { member, enrollment, payment } = data;
+
+        const color = avatarColor(member.name);
+        const initials = memberInitials(member.name);
+        const status = membershipStatusMeta(enrollment);
+
+        $("memDrawerAvatar").textContent = initials;
+        $("memDrawerAvatar").style.background = color;
+
+        $("memDrawerName").textContent =
+            member.name || "Member";
+
+        $("memDrawerStatusBadge").className =
+            `mem-badge ${status.badgeClass}`;
+
+        $("memDrawerStatusBadge").textContent =
+            status.label;
+
+        $("memDrawerPlanBadge").textContent =
+            enrollment?.plan_name || "No Plan";
+
+        $("memDrawerPersonal").innerHTML = [
+
+            drawerDlRow("Phone", escapeHtml(member.phone || "—")),
+
+            drawerDlRow("Email", escapeHtml(member.email || "—")),
+
+            drawerDlRow("Gender", escapeHtml(member.gender || "—")),
+
+            drawerDlRow("DOB", formatDate(member.date_of_birth)),
+
+            drawerDlRow("Address", escapeHtml(member.address || "—"))
+
         ].join("");
-      } else {
-        $("memDrawerMembership").innerHTML = drawerDlRow("Status", statusBadgeHtml(status));
-      }
 
-      if (payment) {
-        $("memDrawerPayment").innerHTML = [
-          drawerDlRow("Last Amount", formatCurrency(payment.amount)),
-          drawerDlRow("Payment Date", formatDate(payment.payment_date)),
-          drawerDlRow("Payment Mode", escapeHtml(payment.payment_mode || "—")),
-        ].join("");
-      } else {
-        $("memDrawerPayment").innerHTML = drawerDlRow("Status", "No payments recorded");
-      }
+        if (enrollment) {
 
-      loader.hidden = true;
-      content.hidden = false;
+            const days = daysRemaining(enrollment.end_date);
+
+            $("memDrawerMembership").innerHTML = [
+
+                drawerDlRow("Plan", escapeHtml(enrollment.plan_name || "—")),
+
+                drawerDlRow("Fee", formatCurrency(enrollment.plan_fee)),
+
+                drawerDlRow("Join Date", formatDate(enrollment.start_date)),
+
+                drawerDlRow("Expiry Date", formatDate(enrollment.end_date)),
+
+                drawerDlRow(
+                    "Remaining Days",
+                    days == null
+                        ? "—"
+                        : days < 0
+                            ? "0 days"
+                            : `${days} day${days === 1 ? "" : "s"}`
+                )
+
+            ].join("");
+
+        } else {
+
+            $("memDrawerMembership").innerHTML =
+                drawerDlRow("Status", statusBadgeHtml(status));
+
+        }
+
+        if (payment) {
+
+            $("memDrawerPayment").innerHTML = [
+
+                drawerDlRow("Last Amount", formatCurrency(payment.amount)),
+
+                drawerDlRow("Payment Date", formatDate(payment.payment_date)),
+
+                drawerDlRow("Payment Mode", escapeHtml(payment.payment_mode || "—"))
+
+            ].join("");
+
+        } else {
+
+            $("memDrawerPayment").innerHTML =
+                drawerDlRow("Status", "No payments recorded");
+
+        }
+
+        // smooth fade
+        loader.style.opacity = "0";
+
+        setTimeout(() => {
+
+            loader.hidden = true;
+
+            content.hidden = false;
+
+            content.style.opacity = "0";
+
+            requestAnimationFrame(() => {
+
+                content.style.transition = "opacity .2s ease";
+                content.style.opacity = "1";
+
+            });
+
+        }, 180);
+
     } catch (err) {
-      loader.hidden = true;
-      error.hidden = false;
-      error.textContent = err.message || "Could not load profile.";
-    }
-  }
 
+        loader.hidden = true;
+
+        error.hidden = false;
+
+        error.textContent =
+            err.message || "Could not load profile.";
+
+    }
+
+}
   // ── Modals ────────────────────────────────────────────────────────────────
   function openModal(id) {
     $(id)?.classList.add("open");
