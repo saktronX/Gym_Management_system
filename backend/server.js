@@ -2,11 +2,10 @@ const express = require("express");
 const cors    = require("cors");
 
 // Route modules
-const membersRouter     = require("./routes/members");
-const trainersRouter    = require("./routes/trainers");
-const paymentsRouter    = require("./routes/payments");
-const enrollmentsRouter = require("./routes/enrollments");
-const plansRouter       = require("./routes/plans");
+const membersRouter  = require("./routes/members");
+const trainersRouter = require("./routes/trainers");
+const paymentsRouter = require("./routes/payments");
+const plansRouter    = require("./routes/plans");
 
 // Startup DB connection check (exits if MySQL unreachable)
 require("./db");
@@ -19,11 +18,10 @@ app.use(cors());
 app.use(express.json());
 
 // ── Routes ────────────────────────────────────────────────────────────────────
-app.use("/members",     membersRouter);
-app.use("/trainers",    trainersRouter);
-app.use("/payments",    paymentsRouter);
-app.use("/enrollments", enrollmentsRouter);
-app.use("/plans",       plansRouter);
+app.use("/members",  membersRouter);
+app.use("/trainers", trainersRouter);
+app.use("/payments", paymentsRouter);
+app.use("/plans",    plansRouter);
 
 // ── Health check ──────────────────────────────────────────────────────────────
 app.get("/", (req, res) => {
@@ -31,7 +29,7 @@ app.get("/", (req, res) => {
     success: true,
     message: "Gym Management System API is running 🏋️",
     version: "2.0.0",
-    endpoints: ["/members", "/trainers", "/payments", "/enrollments", "/plans"],
+    endpoints: ["/members", "/trainers", "/payments", "/plans"],
   });
 });
 

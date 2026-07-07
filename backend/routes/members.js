@@ -132,6 +132,36 @@ router.post("/", async (req, res) => {
   }
 });
 
+// GET /members/memberships — latest membership record per member (for Members list UI)
+router.get("/memberships", async (req, res) => {
+  try {
+    const [rows] = await db.query(
+      `SELECT e.enrollment_id,
+              e.member_id,
+              e.start_date,
+              e.end_date,
+              e.plan_id,
+              e.status,
+              e.freeze_until,
+              e.freeze_reason,
+              e.notes,
+              COALESCE(mp.plan_name, CONCAT('Plan #', e.plan_id)) AS plan_name,
+              mp.fee AS plan_fee
+       FROM enrollment e
+       INNER JOIN (
+         SELECT member_id, MAX(enrollment_id) AS max_id
+         FROM enrollment
+         GROUP BY member_id
+       ) latest ON e.enrollment_id = latest.max_id
+       LEFT JOIN membership_plan mp ON mp.plan_id = e.plan_id
+       ORDER BY e.member_id DESC`
+    );
+    res.json({ success: true, data: rows });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 // GET /members/:id/profile — full member profile (member + latest enrollment/plan + latest payment)
 router.get("/:id/profile", async (req, res) => {
   const { id } = req.params;
