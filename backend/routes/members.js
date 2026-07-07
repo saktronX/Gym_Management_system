@@ -151,6 +151,8 @@ router.get("/:id/profile", async (req, res) => {
          le.start_date   AS enrollment_start_date,
          le.end_date     AS enrollment_end_date,
          le.status       AS enrollment_status,
+         le.freeze_until,
+         le.freeze_reason,
          mp.plan_id,
          mp.plan_name,
          mp.duration     AS plan_duration,
@@ -220,6 +222,8 @@ router.get("/:id/profile", async (req, res) => {
               plan_name: row.plan_name,
               plan_duration: row.plan_duration,
               plan_fee: row.plan_fee,
+              freeze_until: row.freeze_until || null,
+              freeze_reason: row.freeze_reason || null,
             }
           : null,
         payment: row.payment_id
@@ -242,6 +246,436 @@ router.get("/:id/profile", async (req, res) => {
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
+});
+
+// ── Membership helpers ────────────────────────────────────────────────────────
+
+async function getMemberOr404(connection, memberId) {
+  const [rows] = await connection.query(
+    "SELECT member_id, name FROM member WHERE member_id = ?",
+    [memberId]
+  );
+  return rows[0] || null;
+}
+
+async function getLatestEnrollment(connection, memberId) {
+  const [rows] = await connection.query(
+    `SELECT e.*, mp.plan_name, mp.fee AS plan_fee, mp.duration AS plan_duration
+     FROM enrollment e
+     LEFT JOIN membership_plan mp ON mp.plan_id = e.plan_id
+     WHERE e.member_id = ?
+     ORDER BY e.enrollment_id DESC
+     LIMIT 1`,
+    [memberId]
+  );
+  return rows[0] || null;
+}
+
+async function getPlan(connection, planId) {
+  const [rows] = await connection.query(
+    "SELECT plan_id, plan_name, fee, duration FROM membership_plan WHERE plan_id = ?",
+    [planId]
+  );
+  return rows[0] || null;
+}
+
+function toDateStr(val) {
+  if (!val) return null;
+  if (val instanceof Date) return val.toISOString().slice(0, 10);
+  return String(val).slice(0, 10);
+}
+
+function daysRemaining(endDate) {
+  const iso = toDateStr(endDate);
+  if (!iso) return null;
+  const end = new Date(iso + "T12:00:00");
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  end.setHours(0, 0, 0, 0);
+  return Math.ceil((end - today) / (1000 * 60 * 60 * 24));
+}
+
+function shapeMembershipPayload(enrollment) {
+  if (!enrollment) {
+    return {
+      enrollment_id: null,
+      plan_id: null,
+      plan_name: null,
+      plan_fee: null,
+      status: null,
+      start_date: null,
+      end_date: null,
+      remaining_days: null,
+      freeze_until: null,
+      freeze_reason: null,
+      notes: null,
+    };
+  }
+  const remaining = daysRemaining(enrollment.end_date);
+  return {
+    enrollment_id: enrollment.enrollment_id,
+    plan_id: enrollment.plan_id,
+    plan_name: enrollment.plan_name,
+    plan_fee: enrollment.plan_fee,
+    status: enrollment.status,
+    start_date: enrollment.start_date,
+    end_date: enrollment.end_date,
+    remaining_days: remaining,
+    freeze_until: enrollment.freeze_until || null,
+    freeze_reason: enrollment.freeze_reason || null,
+    notes: enrollment.notes || null,
+  };
+}
+
+async function createEnrollmentPayment(connection, {
+  memberId, planId, startDate, endDate, status, amount, discount, tax, notes,
+  paymentMode = "Cash", paymentStatus = "Completed", paymentDate,
+}) {
+  const [enrollResult] = await connection.query(
+    `INSERT INTO enrollment (member_id, start_date, end_date, plan_id, status, notes)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    [memberId, startDate, endDate, planId, status, notes || null]
+  );
+
+  const finalAmount = parseFloat(amount);
+  const payDate = paymentDate || todayISO();
+  const [paymentResult] = await connection.query(
+    `INSERT INTO payment (amount, discount, tax, payment_mode, status, member_id, plan_id, payment_date, notes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [
+      finalAmount,
+      parseFloat(discount) || 0,
+      parseFloat(tax) || 0,
+      paymentMode,
+      paymentStatus,
+      memberId,
+      planId,
+      payDate,
+      notes || null,
+    ]
+  );
+
+  return {
+    enrollment_id: enrollResult.insertId,
+    payment_id: paymentResult.insertId,
+  };
+}
+
+function resolveRenewStartDate(currentEnrollment, effectiveDate) {
+  const effective = effectiveDate || todayISO();
+  if (!currentEnrollment?.end_date) return effective;
+  const end = toDateStr(currentEnrollment.end_date);
+  if (end >= effective) {
+    const d = new Date(end + "T12:00:00");
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().slice(0, 10);
+  }
+  return effective;
+}
+
+// GET /members/:id/membership — current membership contract
+router.get("/:id/membership", async (req, res) => {
+  const { id } = req.params;
+  try {
+    const member = await getMemberOr404(db, id);
+    if (!member) {
+      return res.status(404).json({ success: false, message: "Member not found." });
+    }
+    const enrollment = await getLatestEnrollment(db, id);
+    res.json({ success: true, data: shapeMembershipPayload(enrollment) });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+});
+
+// POST /members/:id/renew — new enrollment + payment, extend expiry
+router.post("/:id/renew", async (req, res) => {
+  const { id } = req.params;
+  const {
+    plan_id, effective_date, duration_months, discount, tax, notes,
+    payment_mode, amount, payment_date,
+  } = req.body;
+
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const member = await getMemberOr404(connection, id);
+    if (!member) {
+      await connection.rollback();
+      return res.status(404).json({ success: false, message: "Member not found." });
+    }
+
+    const current = await getLatestEnrollment(connection, id);
+    const planId = plan_id || current?.plan_id;
+    if (!planId) {
+      await connection.rollback();
+      return res.status(400).json({ success: false, message: "plan_id is required." });
+    }
+
+    const plan = await getPlan(connection, planId);
+    if (!plan) {
+      await connection.rollback();
+      return res.status(400).json({ success: false, message: "Selected plan not found." });
+    }
+
+    const months = parseInt(duration_months, 10) || parseInt(plan.duration, 10) || 1;
+    const startDate = resolveRenewStartDate(current, effective_date);
+    const endDate = addMonthsToDate(startDate, months);
+    const planPrice = parseFloat(plan.fee) || 0;
+    const disc = parseFloat(discount) || 0;
+    const taxAmt = parseFloat(tax) || 0;
+    const finalAmount = amount != null ? parseFloat(amount) : Math.max(0, planPrice - disc + taxAmt);
+
+    if (finalAmount <= 0) {
+      await connection.rollback();
+      return res.status(400).json({ success: false, message: "Final amount must be greater than zero." });
+    }
+
+    const result = await createEnrollmentPayment(connection, {
+      memberId: id,
+      planId,
+      startDate,
+      endDate,
+      status: "Active",
+      amount: finalAmount,
+      discount: disc,
+      tax: taxAmt,
+      notes,
+      paymentMode: payment_mode || "Cash",
+      paymentDate: payment_date || todayISO(),
+    });
+
+    await connection.commit();
+    const enrollment = await getLatestEnrollment(db, id);
+    res.json({
+      success: true,
+      message: "Membership renewed successfully.",
+      ...result,
+      membership: shapeMembershipPayload(enrollment),
+    });
+  } catch (err) {
+    await connection.rollback();
+    res.status(500).json({ success: false, message: err.message });
+  } finally {
+    connection.release();
+  }
+});
+
+// POST /members/:id/upgrade — new enrollment with upgraded plan
+router.post("/:id/upgrade", async (req, res) => {
+  req.body._action = "upgrade";
+  return handlePlanChange(req, res, "upgrade");
+});
+
+// POST /members/:id/downgrade — new enrollment with downgraded plan
+router.post("/:id/downgrade", async (req, res) => {
+  req.body._action = "downgrade";
+  return handlePlanChange(req, res, "downgrade");
+});
+
+async function handlePlanChange(req, res, action) {
+  const { id } = req.params;
+  const {
+    plan_id, effective_date, duration_months, discount, tax, notes,
+    payment_mode, amount, payment_date,
+  } = req.body;
+
+  if (!plan_id) {
+    return res.status(400).json({ success: false, message: "plan_id is required." });
+  }
+
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const member = await getMemberOr404(connection, id);
+    if (!member) {
+      await connection.rollback();
+      return res.status(404).json({ success: false, message: "Member not found." });
+    }
+
+    const current = await getLatestEnrollment(connection, id);
+    const plan = await getPlan(connection, plan_id);
+    if (!plan) {
+      await connection.rollback();
+      return res.status(400).json({ success: false, message: "Selected plan not found." });
+    }
+
+    if (current && String(current.plan_id) === String(plan_id)) {
+      await connection.rollback();
+      return res.status(400).json({
+        success: false,
+        message: `Member is already on the ${plan.plan_name} plan.`,
+      });
+    }
+
+    const months = parseInt(duration_months, 10) || parseInt(plan.duration, 10) || 1;
+    const startDate = effective_date || todayISO();
+    const endDate = addMonthsToDate(startDate, months);
+    const planPrice = parseFloat(plan.fee) || 0;
+    const disc = parseFloat(discount) || 0;
+    const taxAmt = parseFloat(tax) || 0;
+    const finalAmount = amount != null ? parseFloat(amount) : Math.max(0, planPrice - disc + taxAmt);
+
+    if (finalAmount <= 0) {
+      await connection.rollback();
+      return res.status(400).json({ success: false, message: "Final amount must be greater than zero." });
+    }
+
+    if (current?.enrollment_id) {
+      const prevStatus = action === "upgrade" ? "Upgraded" : "Downgraded";
+      await connection.query(
+        "UPDATE enrollment SET status = ? WHERE enrollment_id = ?",
+        [prevStatus, current.enrollment_id]
+      );
+    }
+
+    const result = await createEnrollmentPayment(connection, {
+      memberId: id,
+      planId: plan_id,
+      startDate,
+      endDate,
+      status: "Active",
+      amount: finalAmount,
+      discount: disc,
+      tax: taxAmt,
+      notes,
+      paymentMode: payment_mode || "Cash",
+      paymentDate: payment_date || todayISO(),
+    });
+
+    await connection.commit();
+    const enrollment = await getLatestEnrollment(db, id);
+    res.json({
+      success: true,
+      message: `Membership ${action}d successfully.`,
+      ...result,
+      membership: shapeMembershipPayload(enrollment),
+    });
+  } catch (err) {
+    await connection.rollback();
+    res.status(500).json({ success: false, message: err.message });
+  } finally {
+    connection.release();
+  }
+}
+
+// POST /members/:id/freeze — freeze current membership
+router.post("/:id/freeze", async (req, res) => {
+  const { id } = req.params;
+  const { freeze_until, reason, notes } = req.body;
+
+  if (!freeze_until) {
+    return res.status(400).json({ success: false, message: "freeze_until is required." });
+  }
+
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const member = await getMemberOr404(connection, id);
+    if (!member) {
+      await connection.rollback();
+      return res.status(404).json({ success: false, message: "Member not found." });
+    }
+
+    const current = await getLatestEnrollment(connection, id);
+    if (!current) {
+      await connection.rollback();
+      return res.status(400).json({ success: false, message: "Member has no active membership to freeze." });
+    }
+
+    await connection.query(
+      `UPDATE enrollment
+       SET status = 'Frozen', freeze_until = ?, freeze_reason = ?, notes = COALESCE(?, notes)
+       WHERE enrollment_id = ?`,
+      [freeze_until, reason || null, notes || null, current.enrollment_id]
+    );
+
+    await connection.commit();
+    const enrollment = await getLatestEnrollment(db, id);
+    res.json({
+      success: true,
+      message: "Membership frozen successfully.",
+      membership: shapeMembershipPayload(enrollment),
+    });
+  } catch (err) {
+    await connection.rollback();
+    res.status(500).json({ success: false, message: err.message });
+  } finally {
+    connection.release();
+  }
+});
+
+// POST /members/:id/cancel — cancel current membership
+router.post("/:id/cancel", async (req, res) => {
+  const { id } = req.params;
+  const { notes } = req.body;
+
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const member = await getMemberOr404(connection, id);
+    if (!member) {
+      await connection.rollback();
+      return res.status(404).json({ success: false, message: "Member not found." });
+    }
+
+    const current = await getLatestEnrollment(connection, id);
+    if (!current) {
+      await connection.rollback();
+      return res.status(400).json({ success: false, message: "Member has no membership to cancel." });
+    }
+
+    await connection.query(
+      `UPDATE enrollment
+       SET status = 'Cancelled', notes = COALESCE(?, notes)
+       WHERE enrollment_id = ?`,
+      [notes || null, current.enrollment_id]
+    );
+
+    await connection.commit();
+    const enrollment = await getLatestEnrollment(db, id);
+    res.json({
+      success: true,
+      message: "Membership cancelled. Member profile and payment history preserved.",
+      membership: shapeMembershipPayload(enrollment),
+    });
+  } catch (err) {
+    await connection.rollback();
+    res.status(500).json({ success: false, message: err.message });
+  } finally {
+    connection.release();
+  }
+});
+
+// PUT /members/:id/membership — dispatch by action type (same logic as POST routes)
+router.put("/:id/membership", async (req, res) => {
+  const { action } = req.body;
+  if (action === "renew") {
+    req.method = "POST";
+    return router.stack
+      .find(r => r.route?.path === "/:id/renew" && r.route.methods.post)
+      ?.route.stack[0].handle(req, res);
+  }
+  if (action === "upgrade") return handlePlanChange(req, res, "upgrade");
+  if (action === "downgrade") return handlePlanChange(req, res, "downgrade");
+  if (action === "freeze") {
+    return router.stack
+      .find(r => r.route?.path === "/:id/freeze" && r.route.methods.post)
+      ?.route.stack[0].handle(req, res);
+  }
+  if (action === "cancel") {
+    return router.stack
+      .find(r => r.route?.path === "/:id/cancel" && r.route.methods.post)
+      ?.route.stack[0].handle(req, res);
+  }
+  return res.status(400).json({
+    success: false,
+    message: "action is required: renew, upgrade, downgrade, freeze, or cancel.",
+  });
 });
 
 // PUT /members/:id
@@ -270,14 +704,35 @@ router.put("/:id", async (req, res) => {
 // DELETE /members/:id
 router.delete("/:id", async (req, res) => {
   const { id } = req.params;
+  const connection = await db.getConnection();
   try {
-    const [result] = await db.query("DELETE FROM member WHERE member_id=?", [id]);
-    if (result.affectedRows === 0) {
+    await connection.beginTransaction();
+
+    const [memberRows] = await connection.query(
+      "SELECT member_id FROM member WHERE member_id=?",
+      [id]
+    );
+    if (!memberRows.length) {
+      await connection.rollback();
       return res.status(404).json({ success: false, message: "Member not found." });
     }
+
+    // Delete dependent rows first to satisfy FK constraints.
+    await connection.query("DELETE FROM payment WHERE member_id=?", [id]);
+    await connection.query("DELETE FROM enrollment WHERE member_id=?", [id]);
+
+    const [result] = await connection.query("DELETE FROM member WHERE member_id=?", [id]);
+    if (result.affectedRows === 0) {
+      await connection.rollback();
+      return res.status(404).json({ success: false, message: "Member not found." });
+    }
+    await connection.commit();
     res.json({ success: true, message: "Member deleted." });
   } catch (err) {
+    await connection.rollback();
     res.status(500).json({ success: false, message: err.message });
+  } finally {
+    connection.release();
   }
 });
 
