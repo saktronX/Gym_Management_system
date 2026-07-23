@@ -260,6 +260,23 @@ This project is licensed under the **MIT License**.
 
 ---
 
+## 👥 Contributors
+
+### Saksham Verma
+- Full-stack application development
+- Backend API development
+- Frontend implementation
+- Project architecture
+
+### Anant Singh Kushwaha
+- Database schema design and improvements
+- Relational database normalization
+- SQL migration scripts (`migrate_v2.sql`)
+- Foreign key relationships and schema updates
+- Database documentation
+
+---
+
 ## 👨‍💻 Author
 
 ### Saksham Verma
