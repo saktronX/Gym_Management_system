@@ -7,7 +7,11 @@
 
 USE Gym_Management_System;
 
--- ── 1. Add member_id to enrollment (the core missing FK) ──────────────────────
+-- ==========================================================
+-- Section 1
+-- Add member_id to the enrollment table to establish a
+-- relationship between enrollments and members.
+-- ==========================================================
 ALTER TABLE enrollment
    ADD COLUMN member_id INT NULL AFTER enrollment_id;
 
@@ -24,12 +28,20 @@ SET @sql = IF(@fk_exists = 0,
 );
 PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- ── 2. Add payment_date to payment ────────────────────────────────────────────
+-- ==========================================================
+-- Section 2
+-- Add payment_date to store the transaction date for each
+-- payment record.
+-- ==========================================================
 ALTER TABLE payment
   ADD COLUMN payment_date DATE NULL AFTER plan_id;
 
--- ── 3. Normalize membership_plan.Description → description ───────────────────
+-- ==========================================================
+-- Section 3
+-- Normalize the membership_plan table by renaming
+-- Description to description for consistent naming.
 -- Only rename if the column is still called 'Description' (PascalCase)
+-- ==========================================================
 SET @col_exists = (
   SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
   WHERE TABLE_SCHEMA = 'Gym_Management_System'
@@ -42,9 +54,16 @@ SET @sql2 = IF(@col_exists > 0,
 );
 PREPARE stmt2 FROM @sql2; EXECUTE stmt2; DEALLOCATE PREPARE stmt2;
 
--- ── 4. Ensure trainer table has gym_id (verify) ───────────────────────────────
--- Already exists per backend usage — no migration needed.
+-- ==========================================================
+-- Section 4
+-- Verify that the trainer table already contains gym_id.
+-- No migration is required.
+-- ==========================================================
 
+-- ==========================================================
+-- Section 5
+-- Verify the final database schema after all migrations.
+-- ==========================================================
 -- ── Verify final state ────────────────────────────────────────────────────────
 SELECT 'enrollment' AS tbl, COLUMN_NAME, DATA_TYPE, IS_NULLABLE
   FROM INFORMATION_SCHEMA.COLUMNS
