@@ -112,15 +112,12 @@ PORT=5000
 
 ### 5. Import the Database
 
-Import the provided SQL file into your local MySQL server.
-
-Example:
-
 ```sql
-CREATE DATABASE gym_management;
+CREATE DATABASE Gym_Management_System;
+USE Gym_Management_System;
 ```
 
-Then import the SQL file using MySQL Workbench or phpMyAdmin.
+Then import `gym_management.sql` using MySQL Workbench, phpMyAdmin, or the MySQL command line.
 
 ### 6. Start the Server
 
@@ -277,7 +274,7 @@ This project is licensed under the **MIT License**.
 - Foreign key relationships and schema updates
 - Database documentation
 * GitHub: https://github.com/Anant2k05
-* https://www.linkedin.com/in/anant-s-kushwaha-24310b1a1/
+* LinkedIn: https://www.linkedin.com/in/anant-s-kushwaha-24310b1a1/
 
 ---
 
