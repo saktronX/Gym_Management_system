@@ -277,7 +277,7 @@ This project is licensed under the **MIT License**.
 - Foreign key relationships and schema updates
 - Database documentation
 * GitHub: https://github.com/Anant2k05
-* LinkedIn: linkedin.com/in/anant-s-kushwaha-24310b1a1
+* https://www.linkedin.com/in/anant-s-kushwaha-24310b1a1/
 
 ---
 
