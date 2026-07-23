@@ -155,6 +155,20 @@ The project manages the following entities:
 * Maintenance Records
 * Lockers
 
+The Gym Management System uses **MySQL** as its relational database. Database design, schema creation, data management, and migrations were performed using **XAMPP** and **phpMyAdmin**.
+
+### Database Files
+
+- **gym_management.sql** – Complete MySQL database schema for setting up the project.
+- **migrate_v2.sql** – Migration script containing schema updates and modifications.
+- **MIGRATION_NOTES.md** – Documentation describing the migration changes.
+
+### Entity Relationship Diagram
+
+The following ER diagram illustrates the database structure and relationships between the project's tables.
+
+![ER Diagram](assets/er_diagram.png)
+
 ---
 
 ## 🌐 REST API Overview
@@ -270,7 +284,7 @@ This project is licensed under the **MIT License**.
 ### Anant Singh Kushwaha
 - Database schema design and improvements
 - Relational database normalization
-- SQL migration scripts (`migrate_v2.sql`)
+- Entity Relationship (ER) Diagram
 - Foreign key relationships and schema updates
 - Database documentation
 * GitHub: https://github.com/Anant2k05
