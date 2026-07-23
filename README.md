@@ -267,6 +267,8 @@ This project is licensed under the **MIT License**.
 - Backend API development
 - Frontend implementation
 - Project architecture
+* GitHub: https://github.com/saktronX
+* LinkedIn: https://www.linkedin.com/in/saksham-verma22/
 
 ### Anant Singh Kushwaha
 - Database schema design and improvements
@@ -274,15 +276,8 @@ This project is licensed under the **MIT License**.
 - SQL migration scripts (`migrate_v2.sql`)
 - Foreign key relationships and schema updates
 - Database documentation
-
----
-
-## 👨‍💻 Author
-
-### Saksham Verma
-
-* GitHub: https://github.com/saktronX
-* LinkedIn: https://www.linkedin.com/in/saksham-verma22/
+* GitHub: https://github.com/Anant2k05
+* LinkedIn: linkedin.com/in/anant-s-kushwaha-24310b1a1
 
 ---
 
